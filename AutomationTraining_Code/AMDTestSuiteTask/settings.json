@@ -1,0 +1,5 @@
+{
+  "Browser": "Edge",
+  "Timeout": 60000,
+  "AMDMainPageUrl": "https://www.amd.com/"
+}

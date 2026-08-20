@@ -1,0 +1,12 @@
+{
+  "Browser": "Edge",
+  "Timeout": 60000,
+  "Graph": {
+    "ClientId": "<ClientID>",
+    "TenantId": "<TenantID>",
+    "Secret": "<App Secret>",
+    "SharePointSite": "<SharePoint Site Url>",
+    "AdminEmail": "<UserName>",
+    "AdminPassword": "<Password>"
+  }
+}

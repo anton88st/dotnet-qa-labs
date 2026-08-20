@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<title>Claude for AQA Engineers — Roadmap</title>
+<style>
+
+/* ── Brand tokens ── */
+:root {
+  /* Neutrals */
+  --v-black:      #131314;
+  --v-dark-gray:  #29292B;
+  --v-gray:       #D2D2D5;
+  --v-light-gray: #EBEBED;
+  --v-white:      #FFFFFF;
+  /* Secondary brights — always paired with their matching dark below */
+  --v-orange:     #FF6A47;  --v-maroon:     #52002D;
+  --v-pink:       #FF6FFF;  --v-purple:     #39175B;
+  --v-green:      #5AFB7A;  --v-teal:       #004051;
+  --v-lime:       #D0FC53;  --v-deep-green: #0B4912;
+  --v-blue:       #53ABFC;  --v-navy:       #101C57;
+  /* Semantic */
+  --bg:           var(--v-light-gray);
+  --bg-elevated:  var(--v-white);
+  --text:         var(--v-dark-gray);
+  --text-strong:  var(--v-black);
+  --text-muted:   #6B6B6E;
+  --border:       var(--v-gray);
+  --primary:      var(--v-orange);
+  --primary-deep: var(--v-maroon);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px 24px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .title { text-align: center; font-size: 26px; font-weight: 800; color: var(--text-strong); margin-bottom: 6px; letter-spacing: -0.02em; }
+  .subtitle { text-align: center; font-size: 13px; color: #666; margin-bottom: 36px; }
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .phase { display: flex; align-items: stretch; gap: 0; }
+  .phase-connector { display: flex; flex-direction: column; align-items: center; width: 56px; flex-shrink: 0; }
+  .phase-dot { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; z-index: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); margin-top: 18px; }
+  .phase-line { width: 3px; flex: 1; min-height: 20px; border-radius: 2px; margin-top: 4px; }
+  .phase-line.last { display: none; }
+  .phase-body { flex: 1; padding: 16px 20px 24px 20px; border-radius: 14px; margin: 8px 0 8px 12px; border: 1.5px solid transparent; }
+  .phase-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .phase-num { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .phase-title { font-size: 16px; font-weight: 700; color: var(--text-strong); }
+  .phase-desc { font-size: 12.5px; color: #555; margin-bottom: 12px; line-height: 1.5; }
+  .cards { display: flex; flex-direction: column; gap: 8px; }
+
+  /* Card styles — uniform full-width row with icon + title (like the Token deck) */
+  .card {
+    background: var(--bg-elevated); border-radius: 10px; padding: 12px 32px 12px 14px;
+    border: 1px solid #e8e8e8; width: 100%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    cursor: pointer; transition: all 0.2s ease;
+    position: relative;
+  }
+  .card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.12); transform: translateY(-2px); border-color: #bbb; }
+  .card.open { border-color: #666; box-shadow: 0 4px 14px rgba(0,0,0,0.13); }
+  .card-header { display: flex; align-items: center; gap: 12px; }
+  .card-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }
+  .card-title { font-size: 13.5px; font-weight: 600; color: var(--text-strong); flex: 1; min-width: 0; }
+  .card-chevron { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); font-size: 10px; color: #bbb; transition: transform 0.2s; }
+  .card.open .card-chevron { transform: translateY(-50%) rotate(180deg); color: #555; }
+  body.edit-mode .card { padding-left: 36px; }
+
+  /* Expanded panel */
+  .card-detail {
+    display: none;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+  }
+  .card.open .card-detail { display: block; }
+  #tc1 .card-detail, #tc2 .card-detail,
+  #tc3 .card-detail, #tc4 .card-detail {
+    padding: 0 !important;
+    margin-top: 10px !important;
+    border-top: 1px solid rgba(56,189,248,0.2) !important;
+    background: transparent !important;
+  }
+  .card-detail > ul { padding-left: 16px; }
+  .card-detail > ul > li { font-size: 11.5px; color: #444; line-height: 1.7; }
+  .card-detail li { font-size: inherit; color: inherit; line-height: inherit; }
+  .card-detail .tip {
+    margin-top: 6px; font-size: 11px; color: #777;
+    background: #f5f5f5; border-radius: 6px; padding: 5px 8px;
+    border-left: 3px solid #ccc;
+  }
+
+  /* Phase colors */
+  .phase-body.p1 { background: rgba(255,106,71,0.10); border-color: rgba(255,106,71,0.35); }
+  .phase-dot.p1 { background: #FF6A47; color: #52002D; }
+  .phase-line.p1 { background: linear-gradient(#FF6A47, #FF6FFF); }
+  .phase-num.p1 { background: rgba(255,106,71,0.22); color: #52002D; }
+
+  .phase-body.p2 { background: rgba(255,111,255,0.10); border-color: rgba(255,111,255,0.35); }
+  .phase-dot.p2 { background: #FF6FFF; color: #39175B; }
+  .phase-line.p2 { background: linear-gradient(#FF6FFF, #5AFB7A); }
+  .phase-num.p2 { background: rgba(255,111,255,0.22); color: #39175B; }
+
+  .phase-body.p3 { background: rgba(90,251,122,0.10); border-color: rgba(90,251,122,0.35); }
+  .phase-dot.p3 { background: #5AFB7A; color: #004051; }
+  .phase-line.p3 { background: linear-gradient(#5AFB7A, #D0FC53); }
+  .phase-num.p3 { background: rgba(90,251,122,0.22); color: #004051; }
+
+  .phase-body.p4 { background: rgba(208,252,83,0.10); border-color: rgba(208,252,83,0.35); }
+  .phase-dot.p4 { background: #D0FC53; color: #0B4912; }
+  .phase-line.p4 { background: linear-gradient(#D0FC53, #53ABFC); }
+  .phase-num.p4 { background: rgba(208,252,83,0.22); color: #0B4912; }
+
+  .phase-body.p5 { background: rgba(83,171,252,0.10); border-color: rgba(83,171,252,0.35); }
+  .phase-dot.p5 { background: #53ABFC; color: #101C57; }
+  .phase-line.p5 { background: linear-gradient(#53ABFC, #FF6A47); }
+  .phase-num.p5 { background: rgba(83,171,252,0.22); color: #101C57; }
+
+  .phase-body.p6 { background: rgba(255,106,71,0.10); border-color: rgba(255,106,71,0.35); }
+  .phase-dot.p6 { background: #FF6A47; color: #52002D; }
+  .phase-line.p6 { background: linear-gradient(#FF6A47, #FF6FFF); }
+  .phase-num.p6 { background: rgba(255,106,71,0.22); color: #52002D; }
+
+  .phase-body.p7 { background: rgba(255,111,255,0.10); border-color: rgba(255,111,255,0.35); }
+  .phase-dot.p7 { background: #FF6FFF; color: #39175B; }
+  .phase-num.p7 { background: rgba(255,111,255,0.22); color: #39175B; }
+
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 28px; font-size: 12px; color: #666; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  .hint { text-align: center; font-size: 11.5px; color: #aaa; margin-bottom: 18px; }
+
+  /* Slideshow */
+  .slideshow { width: 100%; }
+  .slide-nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 6px; }
+  .snav-btn { background: #7c4dca; color: white; border: none; border-radius: 6px; width: 30px; height: 30px; font-size: 16px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
+  .snav-btn:hover { background: #5429a0; }
+  .slide-counter { font-size: 12px; color: #888; min-width: 40px; text-align: center; }
+  .slide-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+  .slide-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; cursor: pointer; transition: background 0.2s; }
+  .slide-dot.active { background: #7c4dca; }
+  .slide { display: none; border-radius: 10px; overflow: hidden; border: 1px solid #e0e0e0; }
+  .slide.active { display: block; }
+  .slide-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
+  .slide-num { font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.7); letter-spacing: 1px; }
+  .slide-title { font-size: 14px; font-weight: 700; color: white; }
+  .slide-body { padding: 14px 16px; background: var(--bg-elevated); }
+  .slide-row { display: flex; gap: 16px; align-items: flex-start; }
+  .slide-graphic { flex: 0 0 48%; max-width: 48%; }
+  .slide-text { flex: 1; font-size: 12px; color: #444; line-height: 1.7; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+  .slide-text p { margin: 0; }
+
+  /* Habits grid */
+  .habits-intro { font-size: 12px; color: #444; line-height: 1.6; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #ede8ff; }
+  .hcat { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; background: #f0ebff; color: #7c4dca; border: 1px solid #d8cfff; transition: all 0.2s; user-select:none; }
+  .hcat.active, .hcat:hover { background: #7c4dca; color: white; border-color: #7c4dca; }
+  .habits-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .habit { display: flex; gap: 10px; background: var(--bg-elevated); border: 1px solid #eee; border-radius: 10px; padding: 10px 12px; transition: box-shadow 0.2s; }
+  .habit:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  .habit.hidden { display: none !important; }
+  .habit-num { font-size: 20px; font-weight: 800; color: #e0d8ff; min-width: 28px; line-height: 1.2; }
+  .habit-body { flex: 1; }
+  .habit-title { font-size: 12px; font-weight: 700; color: var(--text-strong); margin-bottom: 4px; }
+  .habit-desc { font-size: 11px; color: #555; line-height: 1.55; }
+  .habit-desc code { background: #f5f0ff; padding: 1px 4px; border-radius: 3px; font-size: 10.5px; color: #5429a0; }
+  .habit-tag { display: inline-block; margin-top: 6px; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+  .habit-tag.files { background: #fff3e0; color: #a85410; }
+  .habit-tag.prompts { background: #f0ebff; color: #5429a0; }
+  .habit-tag.context { background: #e8f5e9; color: #2e7d32; }
+  .habit-tag.models { background: #e3f2fd; color: #1565c0; }
+  .habit-tag.workflow { background: #fce4ec; color: #c62828; }
+  .habit-source { margin-top: 14px; font-size: 11px; color: #aaa; border-top: 1px solid #f0ebff; padding-top: 10px; }
+
+  /* Deep-dive card */
+  .deepdive-section { padding: 10px 0; border-bottom: 1px solid #ede8ff; }
+  .deepdive-h { font-size: 13px; font-weight: 700; color: #5429a0; margin-bottom: 6px; }
+  .deepdive-section p { font-size: 12px; color: #444; line-height: 1.65; }
+  .deepdive-section ul { padding-left: 16px; margin-top: 6px; }
+  .deepdive-section li { font-size: 12px; color: #444; line-height: 1.75; }
+  .token-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11.5px; }
+  .token-table th { background: #ede8ff; color: #5429a0; padding: 5px 10px; text-align: left; font-weight: 600; }
+  .token-table td { padding: 5px 10px; border-bottom: 1px solid #f0eaff; color: #333; }
+  .token-table tr:last-child td { border-bottom: none; }
+
+  /* ── TOKEN DECK (embedded in card-detail) ── */
+  .token-deck-container { padding: 0; margin-top: 12px; }
+  .tk-deck {
+    background: #080c14; border-radius: 10px; overflow: hidden;
+    border: 1px solid rgba(56,189,248,0.2); font-family: 'Syne', 'Segoe UI', sans-serif;
+  }
+  .tk-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; background: #0d1520;
+    border-bottom: 1px solid rgba(56,189,248,0.12);
+  }
+  .tk-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tk-tab {
+    padding: 3px 10px; border-radius: 3px; font-size: 11px; font-weight: 700;
+    color: #64748b; cursor: pointer; letter-spacing: 0.5px;
+    border: 1px solid transparent; transition: all 0.15s;
+    font-family: 'Space Mono', monospace;
+  }
+  .tk-tab.active { background: rgba(56,189,248,0.15); color: #38bdf8; border-color: rgba(56,189,248,0.3); }
+  .tk-counter { font-family: 'Space Mono', monospace; font-size: 11px; color: #475569; flex-shrink: 0; }
+
+  .tk-slides { position: relative; min-height: 320px; }
+  .tk-slide { display: none; }
+  .tk-slide.tk-active { display: block; }
+  .tk-slide-inner {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    padding: 18px 20px;
+  }
+  .tk-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 3px; margin-bottom: 8px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    background: rgba(56,189,248,0.1); color: #38bdf8;
+    border-left: 2px solid #38bdf8; font-family: 'Space Mono', monospace;
+  }
+  .tk-h3 { font-size: 16px; font-weight: 800; color: #e2e8f0; margin-bottom: 10px; line-height: 1.2; }
+  .tk-body { font-size: 12.5px; color: #94a3b8; line-height: 1.6; margin-bottom: 10px; }
+  .tk-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+  .tk-table th { text-align: left; padding: 5px 8px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #475569; border-bottom: 1px solid rgba(56,189,248,0.1); font-family: 'Space Mono', monospace; }
+  .tk-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #cbd5e1; }
+  .tk-table td code { background: rgba(56,189,248,0.1); padding: 1px 4px; border-radius: 3px; font-size: 11px; color: #7dd3fc; }
+  .tk-table .good { color: #34d399; font-weight: 600; }
+  .tk-table .warn { color: #fb923c; font-weight: 600; }
+  .tk-table .bad  { color: #f87171; font-weight: 600; }
+
+  .tk-callout { border-radius: 6px; padding: 10px 12px; font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
+  .tk-callout.warn { background: rgba(251,146,60,0.1); border-left: 3px solid #fb923c; color: #fed7aa; }
+  .tk-callout.info { background: rgba(56,189,248,0.08); border-left: 3px solid #38bdf8; color: #bae6fd; }
+  .tk-callout.good { background: rgba(52,211,153,0.08); border-left: 3px solid #34d399; color: #a7f3d0; }
+  .tk-callout code { background: rgba(56,189,248,0.15); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+
+  .tk-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; align-items: center; }
+  .tk-chip { padding: 4px 10px; border-radius: 5px; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; }
+  .tk-chip.blue   { background: rgba(56,189,248,0.1);  color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+  .tk-chip.purple { background: rgba(129,140,248,0.1); color: #818cf8; border: 1px solid rgba(129,140,248,0.3); }
+  .tk-chip.green  { background: rgba(52,211,153,0.1);  color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+  .tk-chip.orange { background: rgba(251,146,60,0.1);  color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+  .tk-chip.pink   { background: rgba(244,114,182,0.1); color: #f472b6; border: 1px solid rgba(244,114,182,0.3); }
+  .tk-chip-label  { font-size: 11px; color: #475569; font-family: 'Space Mono', monospace; }
+
+  .tk-stats-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .tk-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(56,189,248,0.1); border-radius: 6px; padding: 8px 12px; text-align: center; flex: 1; }
+  .tk-stat-n { display: block; font-size: 22px; font-weight: 800; font-family: 'Space Mono', monospace; color: #38bdf8; line-height: 1; }
+  .tk-stat-l { display: block; font-size: 10px; color: #475569; margin-top: 3px; font-family: 'Space Mono', monospace; }
+  .tk-stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(56,189,248,0.1); border-radius: 8px; padding: 10px 14px; text-align: center; }
+
+  .tk-img { width: 100%; border-radius: 8px; display: block; border: 1px solid rgba(56,189,248,0.1); margin-bottom: 10px; max-height: 160px; object-fit: cover; }
+  .tk-code {
+    background: #050810; border: 1px solid rgba(56,189,248,0.1); border-radius: 6px;
+    padding: 12px 14px; font-family: 'Space Mono', monospace; font-size: 11.5px;
+    line-height: 1.65; color: #7dd3fc; white-space: pre; overflow-x: auto;
+  }
+  .tk-kw { color: #c084fc; } .tk-str { color: #86efac; } .tk-cm { color: #374151; }
+  .tk-fn { color: #38bdf8; } .tk-num { color: #fb923c; }
+
+  .tk-barchart { display: flex; flex-direction: column; gap: 7px; margin-top: 8px; }
+  .tk-barrow { display: flex; align-items: center; gap: 8px; }
+  .tk-barlabel { font-size: 11px; color: #94a3b8; width: 110px; flex-shrink: 0; font-family: 'Space Mono', monospace; }
+  .tk-bartrack { flex: 1; background: rgba(255,255,255,0.04); border-radius: 3px; height: 20px; }
+  .tk-barfill { height: 100%; border-radius: 3px; font-size: 10px; font-weight: 700; font-family: 'Space Mono', monospace; color: rgba(0,0,0,0.7); display: flex; align-items: center; padding-left: 6px; }
+  .tk-caption { font-size: 10px; color: #374151; font-family: 'Space Mono', monospace; margin-top: 4px; }
+
+  .tk-two-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .tk-box { border-radius: 7px; padding: 10px 12px; }
+  .blue-box { background: rgba(56,189,248,0.07); border: 1px solid rgba(56,189,248,0.2); }
+  .red-box  { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.2); }
+  .tk-box-title { font-size: 11px; font-weight: 700; color: #e2e8f0; margin-bottom: 6px; font-family: 'Space Mono', monospace; }
+  .tk-warn-inline { color: #f87171; font-size: 10px; }
+  .tk-list { padding-left: 14px; }
+  .tk-list li { font-size: 12px; color: #94a3b8; line-height: 1.7; }
+  .tk-list li code { background: rgba(56,189,248,0.1); padding: 1px 4px; border-radius: 3px; font-size: 10.5px; color: #7dd3fc; }
+  .tk-divider { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 10px 0; }
+
+  .tk-two-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .tk-mini-box { border-radius: 6px; padding: 8px 10px; font-size: 11.5px; line-height: 1.6; color: #94a3b8; }
+  .green-mini { background: rgba(52,211,153,0.07); border: 1px solid rgba(52,211,153,0.2); }
+  .red-mini   { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.2); }
+
+  .tk-takeaways { display: flex; flex-direction: column; gap: 6px; }
+  .tk-take { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: #94a3b8; line-height: 1.4; }
+
+  .tk-habit { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 12px; color: #94a3b8; line-height: 1.5; }
+  .tk-habit:last-child { border-bottom: none; }
+  .tk-hnum { font-family: 'Space Mono', monospace; font-size: 13px; }
+
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px 24px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .title { text-align: center; font-size: 26px; font-weight: 800; color: var(--text-strong); margin-bottom: 6px; letter-spacing: -0.02em; }
+  .subtitle { text-align: center; font-size: 13px; color: #666; margin-bottom: 36px; }
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .phase { display: flex; align-items: stretch; gap: 0; }
+  .phase-connector { display: flex; flex-direction: column; align-items: center; width: 56px; flex-shrink: 0; }
+  .phase-dot { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; z-index: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); margin-top: 18px; }
+  .phase-line { width: 3px; flex: 1; min-height: 20px; border-radius: 2px; margin-top: 4px; }
+  .phase-line.last { display: none; }
+  .phase-body { flex: 1; padding: 16px 20px 24px 20px; border-radius: 14px; margin: 8px 0 8px 12px; border: 1.5px solid transparent; }
+  .phase-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .phase-num { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .phase-title { font-size: 16px; font-weight: 700; color: var(--text-strong); }
+  .phase-desc { font-size: 12.5px; color: #555; margin-bottom: 12px; line-height: 1.5; }
+  .cards { display: flex; flex-direction: column; gap: 8px; }
+
+  /* Card styles — uniform full-width row with icon + title (like the Token deck) */
+  .card {
+    background: var(--bg-elevated); border-radius: 10px; padding: 12px 32px 12px 14px;
+    border: 1px solid #e8e8e8; width: 100%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    cursor: pointer; transition: all 0.2s ease;
+    position: relative;
+  }
+  .card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.12); transform: translateY(-2px); border-color: #bbb; }
+  .card.open { border-color: #666; box-shadow: 0 4px 14px rgba(0,0,0,0.13); }
+  .card-header { display: flex; align-items: center; gap: 12px; }
+  .card-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }
+  .card-title { font-size: 13.5px; font-weight: 600; color: var(--text-strong); flex: 1; min-width: 0; }
+  .card-chevron { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); font-size: 10px; color: #bbb; transition: transform 0.2s; }
+  .card.open .card-chevron { transform: translateY(-50%) rotate(180deg); color: #555; }
+  body.edit-mode .card { padding-left: 36px; }
+
+  /* Expanded panel */
+  .card-detail {
+    display: none;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+  }
+  .card.open .card-detail { display: block; }
+  .card-detail ul { padding-left: 16px; }
+  .card-detail li { font-size: 11.5px; color: #444; line-height: 1.7; }
+  .card-detail .tip {
+    margin-top: 6px; font-size: 11px; color: #777;
+    background: #f5f5f5; border-radius: 6px; padding: 5px 8px;
+    border-left: 3px solid #ccc;
+  }
+
+  /* Phase colors */
+  .phase-body.p1 { background: rgba(255,106,71,0.10); border-color: rgba(255,106,71,0.35); }
+  .phase-dot.p1 { background: #FF6A47; color: #52002D; }
+  .phase-line.p1 { background: linear-gradient(#FF6A47, #FF6FFF); }
+  .phase-num.p1 { background: rgba(255,106,71,0.22); color: #52002D; }
+
+  .phase-body.p2 { background: rgba(255,111,255,0.10); border-color: rgba(255,111,255,0.35); }
+  .phase-dot.p2 { background: #FF6FFF; color: #39175B; }
+  .phase-line.p2 { background: linear-gradient(#FF6FFF, #5AFB7A); }
+  .phase-num.p2 { background: rgba(255,111,255,0.22); color: #39175B; }
+
+  .phase-body.p3 { background: rgba(90,251,122,0.10); border-color: rgba(90,251,122,0.35); }
+  .phase-dot.p3 { background: #5AFB7A; color: #004051; }
+  .phase-line.p3 { background: linear-gradient(#5AFB7A, #D0FC53); }
+  .phase-num.p3 { background: rgba(90,251,122,0.22); color: #004051; }
+
+  .phase-body.p4 { background: rgba(208,252,83,0.10); border-color: rgba(208,252,83,0.35); }
+  .phase-dot.p4 { background: #D0FC53; color: #0B4912; }
+  .phase-line.p4 { background: linear-gradient(#D0FC53, #53ABFC); }
+  .phase-num.p4 { background: rgba(208,252,83,0.22); color: #0B4912; }
+
+  .phase-body.p5 { background: rgba(83,171,252,0.10); border-color: rgba(83,171,252,0.35); }
+  .phase-dot.p5 { background: #53ABFC; color: #101C57; }
+  .phase-line.p5 { background: linear-gradient(#53ABFC, #FF6A47); }
+  .phase-num.p5 { background: rgba(83,171,252,0.22); color: #101C57; }
+
+  .phase-body.p6 { background: rgba(255,106,71,0.10); border-color: rgba(255,106,71,0.35); }
+  .phase-dot.p6 { background: #FF6A47; color: #52002D; }
+  .phase-line.p6 { background: linear-gradient(#FF6A47, #FF6FFF); }
+  .phase-num.p6 { background: rgba(255,106,71,0.22); color: #52002D; }
+
+  .phase-body.p7 { background: rgba(255,111,255,0.10); border-color: rgba(255,111,255,0.35); }
+  .phase-dot.p7 { background: #FF6FFF; color: #39175B; }
+  .phase-num.p7 { background: rgba(255,111,255,0.22); color: #39175B; }
+
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 28px; font-size: 12px; color: #666; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  .hint { text-align: center; font-size: 11.5px; color: #aaa; margin-bottom: 18px; }
+
+  /* Slideshow */
+  .slideshow { width: 100%; }
+  .slide-nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 6px; }
+  .snav-btn { background: #7c4dca; color: white; border: none; border-radius: 6px; width: 30px; height: 30px; font-size: 16px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
+  .snav-btn:hover { background: #5429a0; }
+  .slide-counter { font-size: 12px; color: #888; min-width: 40px; text-align: center; }
+  .slide-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+  .slide-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; cursor: pointer; transition: background 0.2s; }
+  .slide-dot.active { background: #7c4dca; }
+  .slide { display: none; border-radius: 10px; overflow: hidden; border: 1px solid #e0e0e0; }
+  .slide.active { display: block; }
+  .slide-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
+  .slide-num { font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.7); letter-spacing: 1px; }
+  .slide-title { font-size: 14px; font-weight: 700; color: white; }
+  .slide-body { padding: 14px 16px; background: var(--bg-elevated); }
+  .slide-row { display: flex; gap: 16px; align-items: flex-start; }
+  .slide-graphic { flex: 0 0 48%; max-width: 48%; }
+  .slide-text { flex: 1; font-size: 12px; color: #444; line-height: 1.7; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+  .slide-text p { margin: 0; }
+
+  /* Habits grid */
+  .habits-intro { font-size: 12px; color: #444; line-height: 1.6; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #ede8ff; }
+  .hcat { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; background: #f0ebff; color: #7c4dca; border: 1px solid #d8cfff; transition: all 0.2s; user-select:none; }
+  .hcat.active, .hcat:hover { background: #7c4dca; color: white; border-color: #7c4dca; }
+  .habits-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .habit { display: flex; gap: 10px; background: var(--bg-elevated); border: 1px solid #eee; border-radius: 10px; padding: 10px 12px; transition: box-shadow 0.2s; }
+  .habit:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+  .habit.hidden { display: none !important; }
+  .habit-num { font-size: 20px; font-weight: 800; color: #e0d8ff; min-width: 28px; line-height: 1.2; }
+  .habit-body { flex: 1; }
+  .habit-title { font-size: 12px; font-weight: 700; color: var(--text-strong); margin-bottom: 4px; }
+  .habit-desc { font-size: 11px; color: #555; line-height: 1.55; }
+  .habit-desc code { background: #f5f0ff; padding: 1px 4px; border-radius: 3px; font-size: 10.5px; color: #5429a0; }
+  .habit-tag { display: inline-block; margin-top: 6px; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+  .habit-tag.files { background: #fff3e0; color: #a85410; }
+  .habit-tag.prompts { background: #f0ebff; color: #5429a0; }
+  .habit-tag.context { background: #e8f5e9; color: #2e7d32; }
+  .habit-tag.models { background: #e3f2fd; color: #1565c0; }
+  .habit-tag.workflow { background: #fce4ec; color: #c62828; }
+  .habit-source { margin-top: 14px; font-size: 11px; color: #aaa; border-top: 1px solid #f0ebff; padding-top: 10px; }
+
+  /* Deep-dive card */
+  .deepdive-section { padding: 10px 0; border-bottom: 1px solid #ede8ff; }
+  .deepdive-h { font-size: 13px; font-weight: 700; color: #5429a0; margin-bottom: 6px; }
+  .deepdive-section p { font-size: 12px; color: #444; line-height: 1.65; }
+  .deepdive-section ul { padding-left: 16px; margin-top: 6px; }
+  .deepdive-section li { font-size: 12px; color: #444; line-height: 1.75; }
+  .token-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11.5px; }
+  .token-table th { background: #ede8ff; color: #5429a0; padding: 5px 10px; text-align: left; font-weight: 600; }
+  .token-table td { padding: 5px 10px; border-bottom: 1px solid #f0eaff; color: #333; }
+  .token-table tr:last-child td { border-bottom: none; }
+
+  /* ── TOKEN DECK (embedded in card-detail) ── */
+  .token-deck-container { padding: 0; margin-top: 12px; }
+  .tk-deck {
+    background: #080c14; border-radius: 10px; overflow: hidden;
+    border: 1px solid rgba(56,189,248,0.2); font-family: 'Syne', 'Segoe UI', sans-serif;
+  }
+  .tk-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; background: #0d1520;
+    border-bottom: 1px solid rgba(56,189,248,0.12);
+  }
+  .tk-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tk-tab {
+    padding: 3px 10px; border-radius: 3px; font-size: 11px; font-weight: 700;
+    color: #64748b; cursor: pointer; letter-spacing: 0.5px;
+    border: 1px solid transparent; transition: all 0.15s;
+    font-family: 'Space Mono', monospace;
+  }
+  .tk-tab.active { background: rgba(56,189,248,0.15); color: #38bdf8; border-color: rgba(56,189,248,0.3); }
+  .tk-counter { font-family: 'Space Mono', monospace; font-size: 11px; color: #475569; flex-shrink: 0; }
+
+  .tk-slides { position: relative; min-height: 320px; }
+  .tk-slide { display: none; }
+  .tk-slide.tk-active { display: block; }
+  .tk-slide-inner {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    padding: 18px 20px;
+  }
+  .tk-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 3px; margin-bottom: 8px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    background: rgba(56,189,248,0.1); color: #38bdf8;
+    border-left: 2px solid #38bdf8; font-family: 'Space Mono', monospace;
+  }
+  .tk-h3 { font-size: 16px; font-weight: 800; color: #e2e8f0; margin-bottom: 10px; line-height: 1.2; }
+  .tk-body { font-size: 12.5px; color: #94a3b8; line-height: 1.6; margin-bottom: 10px; }
+  .tk-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+  .tk-table th { text-align: left; padding: 5px 8px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #475569; border-bottom: 1px solid rgba(56,189,248,0.1); font-family: 'Space Mono', monospace; }
+  .tk-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #cbd5e1; }
+  .tk-table td code { background: rgba(56,189,248,0.1); padding: 1px 4px; border-radius: 3px; font-size: 11px; color: #7dd3fc; }
+  .tk-table .good { color: #34d399; font-weight: 600; }
+  .tk-table .warn { color: #fb923c; font-weight: 600; }
+  .tk-table .bad  { color: #f87171; font-weight: 600; }
+
+  .tk-callout { border-radius: 6px; padding: 10px 12px; font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
+  .tk-callout.warn { background: rgba(251,146,60,0.1); border-left: 3px solid #fb923c; color: #fed7aa; }
+  .tk-callout.info { background: rgba(56,189,248,0.08); border-left: 3px solid #38bdf8; color: #bae6fd; }
+  .tk-callout.good { background: rgba(52,211,153,0.08); border-left: 3px solid #34d399; color: #a7f3d0; }
+  .tk-callout code { background: rgba(56,189,248,0.15); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+
+  .tk-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; align-items: center; }
+  .tk-chip { padding: 4px 10px; border-radius: 5px; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; }
+  .tk-chip.blue   { background: rgba(56,189,248,0.1);  color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+  .tk-chip.purple { background: rgba(129,140,248,0.1); color: #818cf8; border: 1px solid rgba(129,140,248,0.3); }
+  .tk-chip.green  { background: rgba(52,211,153,0.1);  color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+  .tk-chip.orange { background: rgba(251,146,60,0.1);  color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+  .tk-chip.pink   { background: rgba(244,114,182,0.1); color: #f472b6; border: 1px solid rgba(244,114,182,0.3); }
+  .tk-chip-label  { font-size: 11px; color: #475569; font-family: 'Space Mono', monospace; }
+
+  .tk-stats-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .tk-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(56,189,248,0.1); border-radius: 6px; padding: 8px 12px; text-align: center; flex: 1; }
+  .tk-stat-n { display: block; font-size: 22px; font-weight: 800; font-family: 'Space Mono', monospace; color: #38bdf8; line-height: 1; }
+  .tk-stat-l { display: block; font-size: 10px; color: #475569; margin-top: 3px; font-family: 'Space Mono', monospace; }
+  .tk-stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(56,189,248,0.1); border-radius: 8px; padding: 10px 14px; text-align: center; }
+
+  .tk-img { width: 100%; border-radius: 8px; display: block; border: 1px solid rgba(56,189,248,0.1); margin-bottom: 10px; max-height: 160px; object-fit: cover; }
+  .tk-code {
+    background: #050810; border: 1px solid rgba(56,189,248,0.1); border-radius: 6px;
+    padding: 12px 14px; font-family: 'Space Mono', monospace; font-size: 11.5px;
+    line-height: 1.65; color: #7dd3fc; white-space: pre; overflow-x: auto;
+  }
+  .tk-kw { color: #c084fc; } .tk-str { color: #86efac; } .tk-cm { color: #374151; }
+  .tk-fn { color: #38bdf8; } .tk-num { color: #fb923c; }
+
+  .tk-barchart { display: flex; flex-direction: column; gap: 7px; margin-top: 8px; }
+  .tk-barrow { display: flex; align-items: center; gap: 8px; }
+  .tk-barlabel { font-size: 11px; color: #94a3b8; width: 110px; flex-shrink: 0; font-family: 'Space Mono', monospace; }
+  .tk-bartrack { flex: 1; background: rgba(255,255,255,0.04); border-radius: 3px; height: 20px; }
+  .tk-barfill { height: 100%; border-radius: 3px; font-size: 10px; font-weight: 700; font-family: 'Space Mono', monospace; color: rgba(0,0,0,0.7); display: flex; align-items: center; padding-left: 6px; }
+  .tk-caption { font-size: 10px; color: #374151; font-family: 'Space Mono', monospace; margin-top: 4px; }
+
+  .tk-two-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .tk-box { border-radius: 7px; padding: 10px 12px; }
+  .blue-box { background: rgba(56,189,248,0.07); border: 1px solid rgba(56,189,248,0.2); }
+  .red-box  { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.2); }
+  .tk-box-title { font-size: 11px; font-weight: 700; color: #e2e8f0; margin-bottom: 6px; font-family: 'Space Mono', monospace; }
+  .tk-warn-inline { color: #f87171; font-size: 10px; }
+  .tk-list { padding-left: 14px; }
+  .tk-list li { font-size: 12px; color: #94a3b8; line-height: 1.7; }
+  .tk-list li code { background: rgba(56,189,248,0.1); padding: 1px 4px; border-radius: 3px; font-size: 10.5px; color: #7dd3fc; }
+  .tk-divider { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 10px 0; }
+
+  .tk-two-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .tk-mini-box { border-radius: 6px; padding: 8px 10px; font-size: 11.5px; line-height: 1.6; color: #94a3b8; }
+  .green-mini { background: rgba(52,211,153,0.07); border: 1px solid rgba(52,211,153,0.2); }
+  .red-mini   { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.2); }
+
+  .tk-takeaways { display: flex; flex-direction: column; gap: 6px; }
+  .tk-take { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: #94a3b8; line-height: 1.4; }
+
+  .tk-habit { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 12px; color: #94a3b8; line-height: 1.5; }
+  .tk-habit:last-child { border-bottom: none; }
+  .tk-hnum { font-family: 'Space Mono', monospace; font-size: 13px; }
+
+
+  /* ═══ TOKEN DECK ═══ */
+  .dk-shell{background:#080c14!important;border-radius:10px!important;overflow:hidden!important;border:1px solid rgba(56,189,248,.2)!important;font-family:'Syne','Segoe UI',sans-serif!important;color:#e2e8f0!important;font-size:13px!important;line-height:1.5!important}
+  .dk-top{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#0d1520;border-bottom:1px solid rgba(56,189,248,.12);flex-wrap:wrap;gap:6px}
+  .dk-tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .dk-tab{padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;border:1px solid transparent;transition:all .15s;font-family:'Space Mono',monospace;white-space:nowrap}
+  .dk-tab-on,.dk-tab:hover{background:rgba(56,189,248,.15)!important;color:#38bdf8!important;border-color:rgba(56,189,248,.3)!important}
+  .dk-count{font-family:'Space Mono',monospace;font-size:11px;color:#475569;white-space:nowrap}
+  .dk-slides{position:relative}
+  .dk-slide{display:none!important;font-size:inherit;color:inherit;line-height:inherit}
+  .dk-slide-on{display:block!important}
+  .dk-shell *{box-sizing:border-box}
+  .dk-shell li{font-size:inherit!important;color:inherit!important;line-height:inherit!important}
+  .dk-grid{display:grid!important;grid-template-columns:1fr 1fr;gap:20px;padding:18px 20px;background:transparent}
+  .dk-col{display:flex!important;flex-direction:column;gap:8px;background:transparent}
+  .dk-h3{display:block!important;font-size:15px!important;font-weight:800!important;color:#e2e8f0!important;line-height:1.2!important;margin-bottom:4px!important}
+  .dk-p{display:block!important;font-size:12.5px!important;color:#94a3b8!important;line-height:1.6!important}
+  .dk-badge{display:inline-block!important;padding:2px 10px!important;background:rgba(56,189,248,.1)!important;color:#38bdf8!important;border-left:2px solid #38bdf8!important;font-size:10px!important;font-weight:700!important;letter-spacing:1.5px!important;text-transform:uppercase!important;font-family:'Space Mono',monospace!important;border-radius:3px!important;margin-bottom:4px!important}
+  .dk-table{width:100%!important;border-collapse:collapse!important;font-size:12px!important;background:transparent!important}
+  .dk-table th{text-align:left!important;padding:5px 8px!important;font-size:10px!important;color:#475569!important;border-bottom:1px solid rgba(56,189,248,.1)!important;background:transparent!important;font-family:'Space Mono',monospace!important}
+  .dk-table td{padding:6px 8px!important;border-bottom:1px solid rgba(255,255,255,.03)!important;color:#cbd5e1!important;background:transparent!important;font-size:12px!important}
+  .dk-table .good{color:#34d399!important;font-weight:600!important}
+  .dk-table .warn{color:#fb923c!important;font-weight:600!important}
+  .dk-table .bad{color:#f87171!important;font-weight:600!important}
+  .dk-callout{display:block!important;border-radius:6px!important;padding:10px 12px!important;font-size:12px!important;line-height:1.5!important}
+  .dk-warn{background:rgba(251,146,60,.1)!important;border-left:3px solid #fb923c!important;color:#fed7aa!important}
+  .dk-info{background:rgba(56,189,248,.08)!important;border-left:3px solid #38bdf8!important;color:#bae6fd!important}
+  .dk-good{background:rgba(52,211,153,.08)!important;border-left:3px solid #34d399!important;color:#a7f3d0!important}
+  .dk-stat{display:block!important;background:rgba(255,255,255,.03)!important;border:1px solid rgba(56,189,248,.1)!important;border-radius:6px!important;padding:8px 10px!important;text-align:center!important}
+  .dk-sn{display:block!important;font-size:24px!important;font-weight:800!important;font-family:'Space Mono',monospace!important;line-height:1!important}
+  .dk-sl{display:block!important;font-size:10px!important;color:#475569!important;margin-top:3px!important;font-family:'Space Mono',monospace!important}
+  .dk-takes{display:flex!important;flex-direction:column!important;gap:6px!important}
+  .dk-take{display:block!important;background:rgba(255,255,255,.03)!important;border:1px solid rgba(255,255,255,.05)!important;border-radius:6px!important;padding:7px 10px!important;font-size:12px!important;color:#94a3b8!important;line-height:1.4!important}
+  .dk-habit{display:flex!important;gap:10px!important;padding:8px 0!important;border-bottom:1px solid rgba(255,255,255,.04)!important;font-size:12px!important;color:#94a3b8!important;line-height:1.5!important}
+  .dk-hn{font-family:'Space Mono',monospace!important;font-size:16px!important;font-weight:800!important;color:rgba(56,189,248,.2)!important;min-width:26px!important;flex-shrink:0!important}
+  .dk-habit strong{color:#e2e8f0!important}
+  .dk-habit em{color:#7dd3fc!important}
+  .dk-bars{display:flex!important;flex-direction:column!important;gap:7px!important}
+  .dk-bar-row{display:flex!important;align-items:center!important;gap:8px!important}
+  .dk-bl{font-size:11px!important;color:#94a3b8!important;width:100px!important;flex-shrink:0!important;font-family:'Space Mono',monospace!important}
+  .dk-bt{flex:1!important;background:rgba(255,255,255,.04)!important;border-radius:3px!important;height:20px!important;overflow:hidden!important}
+  .dk-bf{height:100%!important;border-radius:3px!important;font-size:10px!important;font-weight:700!important;font-family:'Space Mono',monospace!important;color:rgba(0,0,0,.7)!important;display:flex!important;align-items:center!important;padding-left:6px!important}
+  .dk-chip{display:inline-block!important;padding:4px 10px!important;border-radius:5px!important;font-family:'Space Mono',monospace!important;font-size:12px!important;font-weight:700!important}
+  .dk-chip-b{background:rgba(56,189,248,.1)!important;color:#38bdf8!important;border:1px solid rgba(56,189,248,.3)!important}
+  .dk-chip-p{background:rgba(129,140,248,.1)!important;color:#818cf8!important;border:1px solid rgba(129,140,248,.3)!important}
+  .dk-chip-g{background:rgba(52,211,153,.1)!important;color:#34d399!important;border:1px solid rgba(52,211,153,.3)!important}
+  .dk-chip-o{background:rgba(251,146,60,.1)!important;color:#fb923c!important;border:1px solid rgba(251,146,60,.3)!important}
+  .dk-chip-k{background:rgba(244,114,182,.1)!important;color:#f472b6!important;border:1px solid rgba(244,114,182,.3)!important}
+  .dk-code{display:block!important;background:#050810!important;border:1px solid rgba(56,189,248,.1)!important;border-radius:6px!important;padding:12px 14px!important;font-family:'Space Mono',monospace!important;font-size:11.5px!important;line-height:1.65!important;color:#7dd3fc!important;white-space:pre!important;overflow-x:auto!important}
+  .dk-top{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:8px 14px!important;background:#0d1520!important;border-bottom:1px solid rgba(56,189,248,.12)!important;flex-wrap:wrap!important;gap:6px!important}
+  .dk-tabs{display:flex!important;gap:4px!important;flex-wrap:wrap!important}
+  .dk-tab{display:inline-block!important;padding:3px 10px!important;border-radius:3px!important;font-size:11px!important;font-weight:700!important;color:#64748b!important;cursor:pointer!important;border:1px solid transparent!important;font-family:'Space Mono',monospace!important;white-space:nowrap!important}
+  .dk-tab-on,.dk-tab:hover{background:rgba(56,189,248,.15)!important;color:#38bdf8!important;border-color:rgba(56,189,248,.3)!important}
+  .dk-count{font-family:'Space Mono',monospace!important;font-size:11px!important;color:#475569!important;white-space:nowrap!important}
+  .dk-nav{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:8px 16px!important;background:#0d1520!important;border-top:1px solid rgba(56,189,248,.1)!important}
+  .dk-btn{background:rgba(56,189,248,.08)!important;border:1px solid rgba(56,189,248,.2)!important;color:#38bdf8!important;border-radius:4px!important;padding:5px 14px!important;font-size:12px!important;cursor:pointer!important;font-family:'Space Mono',monospace!important}
+  .dk-btn:hover{background:rgba(56,189,248,.18)!important}
+  .dk-dots{display:flex!important;gap:5px!important;align-items:center!important}
+  .dk-dot{display:inline-block!important;width:6px!important;height:6px!important;border-radius:50%!important;background:#1e293b!important;cursor:pointer!important}
+  .dk-dot-on{background:#38bdf8!important;width:18px!important;border-radius:3px!important}
+  .dk-img{display:block!important;width:100%!important;border-radius:8px!important;border:1px solid rgba(56,189,248,.1)!important;max-height:150px!important;object-fit:cover!important}
+  .dk-list{padding-left:14px!important}
+  .dk-list li{font-size:12px!important;line-height:1.7!important;color:inherit!important}
+  .dk-list li code{background:rgba(56,189,248,.1)!important;padding:1px 4px!important;border-radius:3px!important;font-size:10.5px!important;color:#7dd3fc!important}
+  .dk-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:18px 20px}
+  @media(max-width:700px){.dk-grid{grid-template-columns:1fr}}
+  .dk-col{display:flex;flex-direction:column;gap:8px}
+  .dk-badge{display:inline-block;padding:2px 10px;border-radius:3px;margin-bottom:4px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;background:rgba(56,189,248,.1);color:#38bdf8;border-left:2px solid #38bdf8;font-family:'Space Mono',monospace}
+  .dk-h3{font-size:15px;font-weight:800;color:#e2e8f0;line-height:1.2;margin-bottom:4px}
+  .dk-p{font-size:12.5px;color:#94a3b8;line-height:1.6}
+  .dk-table{width:100%;border-collapse:collapse;font-size:12px}
+  .dk-table th{text-align:left;padding:5px 8px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#475569;border-bottom:1px solid rgba(56,189,248,.1);font-family:'Space Mono',monospace}
+  .dk-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);color:#cbd5e1}
+  .dk-table td code{background:rgba(56,189,248,.1);padding:1px 4px;border-radius:3px;font-size:11px;color:#7dd3fc}
+  .dk-table .good{color:#34d399;font-weight:600}.dk-table .warn{color:#fb923c;font-weight:600}.dk-table .bad{color:#f87171;font-weight:600}
+  .dk-callout{border-radius:6px;padding:10px 12px;font-size:12px;line-height:1.5}
+  .dk-warn{background:rgba(251,146,60,.1);border-left:3px solid #fb923c;color:#fed7aa}
+  .dk-info{background:rgba(56,189,248,.08);border-left:3px solid #38bdf8;color:#bae6fd}
+  .dk-good{background:rgba(52,211,153,.08);border-left:3px solid #34d399;color:#a7f3d0}
+  .dk-callout code{background:rgba(56,189,248,.15);padding:1px 5px;border-radius:3px;font-size:11px}
+  .dk-chip{padding:4px 10px;border-radius:5px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700}
+  .dk-chip-b{background:rgba(56,189,248,.1);color:#38bdf8;border:1px solid rgba(56,189,248,.3)}
+  .dk-chip-p{background:rgba(129,140,248,.1);color:#818cf8;border:1px solid rgba(129,140,248,.3)}
+  .dk-chip-g{background:rgba(52,211,153,.1);color:#34d399;border:1px solid rgba(52,211,153,.3)}
+  .dk-chip-o{background:rgba(251,146,60,.1);color:#fb923c;border:1px solid rgba(251,146,60,.3)}
+  .dk-chip-k{background:rgba(244,114,182,.1);color:#f472b6;border:1px solid rgba(244,114,182,.3)}
+  .dk-stat{background:rgba(255,255,255,.03);border:1px solid rgba(56,189,248,.1);border-radius:6px;padding:8px 10px;text-align:center}
+  .dk-sn{display:block;font-size:24px;font-weight:800;font-family:'Space Mono',monospace;line-height:1}
+  .dk-sl{display:block;font-size:10px;color:#475569;margin-top:3px;font-family:'Space Mono',monospace}
+  .dk-img{width:100%;border-radius:8px;border:1px solid rgba(56,189,248,.1);max-height:150px;object-fit:cover}
+  .dk-code{background:#050810;border:1px solid rgba(56,189,248,.1);border-radius:6px;padding:12px 14px;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.65;color:#7dd3fc;white-space:pre;overflow-x:auto}
+  .dk-kw{color:#c084fc}.dk-str{color:#86efac}.dk-cm{color:#374151}.dk-fn{color:#38bdf8}.dk-num{color:#fb923c}
+  .dk-bars{display:flex;flex-direction:column;gap:7px}
+  .dk-bar-row{display:flex;align-items:center;gap:8px}
+  .dk-bl{font-size:11px;color:#94a3b8;width:100px;flex-shrink:0;font-family:'Space Mono',monospace}
+  .dk-bt{flex:1;background:rgba(255,255,255,.04);border-radius:3px;height:20px}
+  .dk-bf{height:100%;border-radius:3px;font-size:10px;font-weight:700;font-family:'Space Mono',monospace;color:rgba(0,0,0,.7);display:flex;align-items:center;padding-left:6px}
+  .dk-list{padding-left:14px}.dk-list li{font-size:12px;line-height:1.7}.dk-list li code{background:rgba(56,189,248,.1);padding:1px 4px;border-radius:3px;font-size:10.5px;color:#7dd3fc}
+  .dk-takes{display:flex;flex-direction:column;gap:6px}
+  .dk-take{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:6px;padding:7px 10px;font-size:12px;color:#94a3b8;line-height:1.4}
+  .dk-habit{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:#94a3b8;line-height:1.5}
+  .dk-habit:last-child{border-bottom:none}
+  .dk-hn{font-family:'Space Mono',monospace;font-size:16px;font-weight:800;color:rgba(56,189,248,.2);min-width:26px;flex-shrink:0}
+  .dk-habit strong{color:#e2e8f0}.dk-habit em{color:#7dd3fc}
+  .dk-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#0d1520;border-top:1px solid rgba(56,189,248,.1)}
+  .dk-btn{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);color:#38bdf8;border-radius:4px;padding:5px 14px;font-size:12px;cursor:pointer;transition:all .15s;font-family:'Space Mono',monospace}
+  .dk-btn:hover{background:rgba(56,189,248,.18)}
+  .dk-dots{display:flex;gap:5px;align-items:center}
+  .dk-dot{width:6px;height:6px;border-radius:50%;background:#1e293b;cursor:pointer;transition:all .2s}
+  .dk-dot-on{background:#38bdf8!important;width:18px!important;border-radius:3px!important}
+
+
+  /* ── PRESENTATION CARDS ── */
+  #tc1 .card-detail, #tc2 .card-detail,
+  #tc3 .card-detail, #tc4 .card-detail {
+    padding: 0 !important;
+    margin-top: 12px !important;
+    border-top: 2px solid #e0e0e0 !important;
+    background: transparent !important;
+  }
+  .pres-wrap {
+    display: flex !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    border: 1px solid #e0e0e0 !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+    font-family: 'Segoe UI', system-ui, sans-serif !important;
+  }
+  .pres-sidebar {
+    width: 180px !important;
+    flex-shrink: 0 !important;
+    background: linear-gradient(180deg, #0a3d7a 0%, #1565c0 100%) !important;
+    padding: 20px 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+  .pres-part-title {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    color: rgba(255,255,255,0.6) !important;
+    margin-bottom: 4px !important;
+  }
+  .pres-part-sub {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #fff !important;
+    line-height: 1.2 !important;
+    margin-bottom: 16px !important;
+    padding-bottom: 14px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.2) !important;
+  }
+  .pres-thumbs {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    flex: 1 !important;
+  }
+  .pres-thumb {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 7px 9px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    color: rgba(255,255,255,0.65) !important;
+    cursor: pointer !important;
+    transition: all 0.15s !important;
+    line-height: 1.3 !important;
+  }
+  .pres-thumb span {
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    background: rgba(255,255,255,0.15) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    flex-shrink: 0 !important;
+  }
+  .pres-thumb:hover, .pres-thumb.active {
+    background: rgba(255,255,255,0.18) !important;
+    color: #fff !important;
+  }
+  .pres-thumb.active span {
+    background: #fff !important;
+    color: #1565c0 !important;
+  }
+  .pres-nav {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin-top: 14px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid rgba(255,255,255,0.2) !important;
+    align-items: center !important;
+  }
+  .pres-btn {
+    width: 100% !important;
+    padding: 6px 0 !important;
+    border: 1px solid rgba(255,255,255,0.3) !important;
+    background: rgba(255,255,255,0.08) !important;
+    color: #fff !important;
+    border-radius: 4px !important;
+    font-size: 11px !important;
+    cursor: pointer !important;
+    transition: background 0.15s !important;
+  }
+  .pres-btn:hover { background: rgba(255,255,255,0.2) !important; }
+  .pres-btn-next { background: rgba(255,255,255,0.18) !important; }
+  .pres-counter {
+    font-size: 11px !important;
+    color: rgba(255,255,255,0.55) !important;
+  }
+  .pres-stage { flex: 1 !important; overflow: hidden !important; }
+  .pres-slide { display: none; }
+  .pres-slide-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    padding: 14px 20px !important;
+    color: #fff !important;
+  }
+  .pres-slide-num {
+    font-size: 32px !important;
+    font-weight: 800 !important;
+    opacity: 0.3 !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+    font-family: 'Syne', sans-serif !important;
+  }
+  .pres-slide-title {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: #fff !important;
+    line-height: 1.2 !important;
+  }
+  .pres-slide-sub {
+    font-size: 12px !important;
+    color: rgba(255,255,255,0.75) !important;
+    margin-top: 2px !important;
+  }
+  .pres-slide-body {
+    padding: 16px 20px 20px !important;
+    background: #fff !important;
+  }
+  .pres-two-col {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+  }
+  .pres-col { display: flex !important; flex-direction: column !important; gap: 10px !important; }
+  .pres-p { font-size: 13px !important; color: #333 !important; line-height: 1.65 !important; margin: 0 !important; }
+  .pres-table { width: 100% !important; border-collapse: collapse !important; font-size: 12px !important; }
+  .pres-table thead tr { background: #1565c0 !important; }
+  .pres-table th { padding: 7px 10px !important; font-size: 11px !important; color: #fff !important; text-align: left !important; font-weight: 600 !important; }
+  .pres-table td { padding: 7px 10px !important; border-bottom: 1px solid #f0f0f0 !important; color: #333 !important; font-size: 12px !important; background: #fff !important; }
+  .pres-table tr:nth-child(even) td { background: #f8f9ff !important; }
+  .pres-table .green { color: #2e7d32 !important; font-weight: 600 !important; }
+  .pres-table .orange { color: #e65100 !important; font-weight: 600 !important; }
+  .pres-table .red { color: #c62828 !important; font-weight: 600 !important; }
+  .pres-highlight-box {
+    background: #f0f7ff !important;
+    border: 1px solid #bbdefb !important;
+    border-radius: 8px !important;
+    padding: 12px 14px !important;
+  }
+  .pres-hb-label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    color: #1565c0 !important;
+  }
+  .pres-token {
+    padding: 4px 10px !important;
+    border-radius: 5px !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    display: inline-block !important;
+  }
+  .pres-stats-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .pres-stat-card {
+    background: #fafafa !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    text-align: center !important;
+  }
+  .pres-stat-n {
+    display: block !important;
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    font-family: 'Space Mono', monospace !important;
+    line-height: 1.1 !important;
+    color: #1565c0 !important;
+  }
+  .pres-stat-l {
+    display: block !important;
+    font-size: 11px !important;
+    color: #777 !important;
+    margin-top: 2px !important;
+    line-height: 1.3 !important;
+  }
+  .pres-warn-box {
+    background: #fff8e1 !important;
+    border-left: 4px solid #f9a825 !important;
+    border-radius: 4px !important;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+    color: #333 !important;
+    line-height: 1.5 !important;
+  }
+  .pres-info-box {
+    background: #e8f5e9 !important;
+    border-left: 4px solid #43a047 !important;
+    border-radius: 4px !important;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+    color: #333 !important;
+    line-height: 1.5 !important;
+  }
+  .pres-info-box code, .pres-warn-box code {
+    background: rgba(0,0,0,0.06) !important;
+    padding: 1px 5px !important;
+    border-radius: 3px !important;
+    font-size: 11px !important;
+  }
+
+  /* ── PHASE-LEVEL PRESENTATION BUTTON + INLINE VIEWER ── */
+  .phase-header { display: flex; align-items: center; gap: 10px; }
+  .pptx-phase-btn {
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, var(--v-orange), #FF8A6A);
+    color: #fff; border: none; border-radius: 6px;
+    font-weight: 600; font-size: 11.5px; cursor: pointer;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+  }
+  .pptx-phase-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,106,71,0.35); }
+
+  .pptx-upload-btn {
+    display: none;
+    margin-left: 6px;
+    align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: rgba(34,197,94,0.10); color: #16a34a;
+    border: 1px solid rgba(34,197,94,0.35);
+    border-radius: 6px;
+    font-weight: 600; font-size: 11.5px; cursor: pointer;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    transition: background 0.15s, transform 0.1s;
+  }
+  body.edit-mode .pptx-upload-btn { display: inline-flex; }
+  .pptx-upload-btn:hover { background: rgba(34,197,94,0.20); transform: translateY(-1px); }
+  .pptx-upload-btn:disabled { opacity: 0.6; cursor: progress; transform: none; }
+
+  .pptx-remove-btn {
+    display: none;
+    margin-left: 6px;
+    align-items: center; gap: 6px;
+    padding: 6px 12px;
+    background: rgba(239,68,68,0.10); color: #dc2626;
+    border: 1px solid rgba(239,68,68,0.35);
+    border-radius: 6px;
+    font-weight: 600; font-size: 11.5px; cursor: pointer;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    transition: background 0.15s, transform 0.1s;
+  }
+  body.edit-mode .pptx-remove-btn { display: inline-flex; }
+  .pptx-remove-btn:hover { background: rgba(239,68,68,0.20); transform: translateY(-1px); }
+  .pptx-remove-btn:disabled { opacity: 0.6; cursor: progress; transform: none; }
+  .pptx-phase-icon { display: inline-block; font-size: 9px; transition: transform 0.2s; }
+  .phase-body.pptx-open .pptx-phase-icon { transform: rotate(90deg); }
+
+  /* Hidden by default; shown when phase-body has .pptx-open */
+  .has-pptx > .pptx-inline { display: none; }
+  .has-pptx.pptx-open > .pptx-inline { display: flex; }
+
+  /* In edit mode, every card-detail is always visible (no need to click each card to edit it) */
+  body.edit-mode .card-detail { display: block; }
+
+  .pptx-inline {
+    position: relative;
+    margin-top: 14px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 75vh;
+    background: #1a1a2e;
+    border-radius: 8px;
+    overflow: hidden;
+    align-items: center; justify-content: center;
+  }
+  .pptx-inline-stage {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pptx-inline-stage img {
+    max-width: calc(100% - 110px);
+    max-height: calc(100% - 40px);
+    width: auto; height: auto;
+    object-fit: contain;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    background: #fff;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .pptx-nav-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); color: #fff;
+    border: none; cursor: pointer; font-size: 22px; line-height: 1;
+    z-index: 10; transition: background 0.15s, transform 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 0 3px 0;
+  }
+  .pptx-nav-prev { left: 12px; }
+  .pptx-nav-next { right: 12px; }
+  .pptx-nav-btn:hover { background: rgba(255,255,255,0.2); }
+  .pptx-nav-btn:active { transform: translateY(-50%) scale(0.95); }
+  .pptx-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .pptx-inline-counter {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    color: #cbd5e1; font-family: 'Space Mono', monospace; font-size: 11px;
+    background: rgba(0,0,0,0.55); padding: 4px 12px; border-radius: 12px;
+    z-index: 10; pointer-events: none;
+  }
+  .pptx-fs-btn {
+    position: absolute; top: 10px; right: 10px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); color: #fff;
+    border: none; cursor: pointer; font-size: 14px; line-height: 1;
+    z-index: 10; transition: background 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pptx-fs-btn:hover { background: rgba(255,255,255,0.2); }
+  .pptx-fs-btn .pptx-fs-exit { display: none; }
+  .pptx-inline:fullscreen .pptx-fs-btn .pptx-fs-enter { display: none; }
+  .pptx-inline:fullscreen .pptx-fs-btn .pptx-fs-exit { display: inline; }
+  /* When fullscreen, fill the screen and drop the aspect-ratio cap */
+  .pptx-inline:fullscreen {
+    aspect-ratio: auto;
+    max-height: none;
+    width: 100vw; height: 100vh;
+    border-radius: 0;
+    background: #0a0a14;
+  }
+  .pptx-inline:fullscreen .pptx-inline-stage img {
+    max-width: calc(100vw - 140px);
+    max-height: calc(100vh - 60px);
+  }
+  .pptx-inline:fullscreen .pptx-nav-btn {
+    width: 56px; height: 56px; font-size: 32px;
+  }
+  .pptx-inline:fullscreen .pptx-inline-counter { font-size: 13px; bottom: 20px; }
+
+  /* ── INLINE EDITING ── */
+  /* Editable elements respond to hover/focus only in edit mode */
+  body.edit-mode [data-edit-id] {
+    cursor: text;
+    transition: outline-color 0.15s, background-color 0.15s;
+    outline: 1px dashed transparent;
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+  body.edit-mode [data-edit-id]:hover { outline-color: rgba(255,106,71,0.55); }
+  body.edit-mode [data-edit-id]:focus { outline: 2px solid var(--v-orange); background: rgba(255,106,71,0.08); }
+
+  /* Edit affordances are hidden by default and shown only in edit mode */
+  .edit-remove-btn, .edit-add-card-btn, .edit-add-phase-btn, .card-drag-handle { display: none; }
+  body.edit-mode .edit-remove-btn { display: inline-flex; }
+  body.edit-mode .edit-add-card-btn,
+  body.edit-mode .edit-add-phase-btn { display: block; }
+  body.edit-mode .card-drag-handle { display: flex; }
+
+  /* Remove (×) button — minimal icon, no circle */
+  .edit-remove-btn {
+    width: 20px; height: 20px;
+    background: transparent; color: #94a3b8;
+    border: none;
+    cursor: pointer; font-size: 16px; line-height: 1;
+    align-items: center; justify-content: center;
+    padding: 0;
+    transition: color 0.12s, transform 0.12s;
+    flex-shrink: 0;
+  }
+  .edit-remove-btn:hover { color: #ef4444; transform: scale(1.15); }
+  .edit-remove-phase { margin-left: 8px; }
+  .edit-remove-card {
+    position: absolute; top: 6px; right: 8px;
+    z-index: 4;
+  }
+
+  /* + Add card / + Add phase */
+  .edit-add-card-btn, .edit-add-phase-btn {
+    width: 100%; padding: 10px 14px;
+    background: rgba(255,106,71,0.06);
+    border: 1.5px dashed rgba(255,106,71,0.45);
+    color: var(--v-orange);
+    border-radius: 8px;
+    font-weight: 600; font-size: 12.5px;
+    cursor: pointer;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin-top: 10px;
+    transition: all 0.15s;
+  }
+  .edit-add-card-btn:hover, .edit-add-phase-btn:hover {
+    background: rgba(255,106,71,0.14);
+    border-color: rgba(255,106,71,0.65);
+    transform: translateY(-1px);
+  }
+  .edit-add-phase-btn { margin: 18px 0 8px 68px; max-width: calc(100% - 80px); }
+
+  /* Card drag handle — centered vertically, well to the left of the icon */
+  .card-drag-handle {
+    position: absolute; top: 14px; left: 8px;
+    width: 18px; height: 22px;
+    color: #cbd5e1; cursor: grab;
+    align-items: center; justify-content: center;
+    font-size: 12px; line-height: 1; letter-spacing: -1px;
+    background: transparent; border: none;
+    transition: color 0.12s;
+    user-select: none;
+  }
+  .card-drag-handle:hover { color: var(--v-orange); }
+  .card-drag-handle:active { cursor: grabbing; }
+
+  /* Phase drag = grab the connector column */
+  body.edit-mode .phase-connector { cursor: grab; }
+  body.edit-mode .phase-connector:active { cursor: grabbing; }
+
+  /* SortableJS visuals */
+  .sortable-ghost { opacity: 0.4; background: rgba(255,106,71,0.06); }
+  .sortable-chosen { box-shadow: 0 4px 16px rgba(99,102,241,0.35); }
+  .sortable-drag { opacity: 0.9; }
+
+  /* Default-color theme for new phases */
+  .phase-dot.p-new { background: #94a3b8; color: white; }
+  .phase-line.p-new { background: #cbd5e1; }
+  .phase-body.p-new { background: rgba(148,163,184,0.06); border-color: rgba(148,163,184,0.2); }
+  .phase-num.p-new { background: #f1f5f9; color: #475569; }
+
+  /* Toolbar — static in the top-right corner; scrolls with the page */
+  #editor-toolbar {
+    position: absolute; right: 24px; top: 24px;
+    z-index: 8000;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px 8px 14px;
+    background: rgba(26,26,46,0.96);
+    color: #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 12px;
+    backdrop-filter: blur(4px);
+  }
+  #editor-toolbar .editor-status { font-size: 11.5px; }
+  #editor-toolbar .editor-status-clean { color: #94a3b8; }
+  #editor-toolbar .editor-status-dirty { color: #fbbf24; font-weight: 700; display: none; }
+  #editor-toolbar[data-state="dirty"] .editor-status-clean { display: none; }
+  #editor-toolbar[data-state="dirty"] .editor-status-dirty { display: inline; }
+  #editor-toolbar .editor-btn {
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.08);
+    color: #fff; border: none; border-radius: 5px;
+    font-weight: 600; font-size: 11.5px; cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, transform 0.1s;
+  }
+  #editor-toolbar .editor-btn:hover { background: rgba(255,255,255,0.18); }
+  #editor-toolbar .editor-btn:active { transform: scale(0.97); }
+  #editor-toolbar .editor-primary { background: linear-gradient(135deg, var(--v-orange), #FF8A6A); }
+  #editor-toolbar .editor-primary:hover { background: linear-gradient(135deg, #E55438, var(--v-orange)); }
+
+  /* View-mode vs edit-mode toolbar visibility */
+  #editor-toolbar[data-mode="view"] .toolbar-edit-only { display: none; }
+  #editor-toolbar[data-mode="edit"] .toolbar-view-only { display: none; }
+  .pptx-inline-loading {
+    position: absolute; inset: 0; display: flex;
+    flex-direction: column; align-items: center; justify-content: center;
+    color: #94a3b8; font-family: 'Space Mono', monospace; font-size: 12px;
+    background: #1a1a2e;
+  }
+  .pptx-inline-loading.hidden { display: none; }
+  .pptx-spinner {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 3px solid rgba(255,106,71,0.22);
+    border-top-color: var(--v-orange);
+    animation: pptxspin 0.9s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes pptxspin { to { transform: rotate(360deg); } }
+
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/css/pptxjs.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/css/nv.d3.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body class="">
+
+<div class="title">🤖 Claude for AQA Engineers — Implementation Roadmap</div>
+<div class="timeline">
+  <div id="content-loading" class="content-loading">Loading roadmap…</div>
+</div>
+</div>
+
+<script>
+  // ── Inline PNG slideshow ──────────────────────────────────────────────
+  // Slides are pre-rendered by ./rebuild.sh into
+  //   presentations/<key>/slide-NN.png + manifest.json (with slide count).
+  // Each `.card.has-pptx` carries its own viewer state on its DOM element
+  // (`__pptxState`), so multiple cards can host their own decks.
+
+  function toggle(card) {
+    var wasOpen = card.classList.contains('open');
+    card.parentElement.querySelectorAll('.card').forEach(function(c) { c.classList.remove('open'); });
+    if (!wasOpen) card.classList.add('open');
+  }
+  function tcToggle(n) {
+    var card = document.getElementById('tc'+n);
+    var wasOpen = card.classList.contains('open');
+    [1,2,3,4].forEach(function(i){ document.getElementById('tc'+i).classList.remove('open'); });
+    if (!wasOpen) card.classList.add('open');
+  }
+
+  function slidePath(key, i) {
+    var n = String(i + 1).padStart(2, '0');
+    return '/storage/presentations/' + key + '/slide-' + n + '.png';
+  }
+
+  // A "host" is any element with class="has-pptx" + data-pptx-key + a child .pptx-inline.
+  function findPptxHost(node) {
+    return node.closest('.has-pptx');
+  }
+
+  // Called by the phase-header "Presentation" button.
+  function togglePhasePptx(btn) {
+    var host = findPptxHost(btn);
+    if (!host) return;
+    var willOpen = !host.classList.contains('pptx-open');
+    host.classList.toggle('pptx-open', willOpen);
+    btn.setAttribute('aria-expanded', String(willOpen));
+    btn.querySelector('.pptx-phase-label').textContent = willOpen ? 'Hide' : 'Presentation';
+    if (willOpen) {
+      initInlinePptx(host);
+      host.querySelector('.pptx-inline').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  // Called by the phase-header "Upload" button (edit mode). Opens a file
+  // picker, POSTs the .pptx to /_upload-pptx, waits for LibreOffice to render
+  // the slides, then refreshes the inline viewer.
+  function uploadPptx(btn) {
+    var host = findPptxHost(btn);
+    if (!host) return;
+    var key = host.dataset.pptxKey;
+    if (!key) { alert('This phase has no pptx key.'); return; }
+
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.onchange = function() {
+      var file = input.files && input.files[0];
+      input.remove();
+      if (!file) return;
+      sendPptxUpload(host, btn, key, file);
+    };
+    input.click();
+  }
+
+  function removePptx(btn) {
+    var host = findPptxHost(btn);
+    if (!host) return;
+    var key = host.dataset.pptxKey;
+    if (!key) return;
+
+    var label = btn.querySelector('.pptx-remove-label');
+    var orig = label ? label.textContent : '';
+    if (label) label.textContent = 'Removing…';
+    btn.disabled = true;
+
+    fetch('/_delete-pptx?key=' + encodeURIComponent(key), { method: 'POST' })
+      .then(function(r) {
+        return r.json().then(function(body) {
+          if (!r.ok || !body.ok) throw new Error(body.error || ('HTTP ' + r.status));
+          return body;
+        });
+      })
+      .then(function() {
+        btn.disabled = false;
+        if (label) label.textContent = orig;
+        // Reset viewer state — next time user clicks Presentation, it'll show
+        // the friendly "Slides not built yet" message.
+        host.__pptxState = null;
+        var stage = host.querySelector('.pptx-inline-stage');
+        if (stage) stage.innerHTML = '';
+        // If panel is open, close it
+        if (host.classList.contains('pptx-open')) {
+          var pb = host.querySelector('.pptx-phase-btn');
+          if (pb) togglePhasePptx(pb);
+        }
+        setToolbarMessage('✓ Deck removed for this phase', 'ok');
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        if (label) label.textContent = orig;
+        setToolbarMessage('Delete failed: ' + (err.message || err), 'err');
+        console.error('removePptx:', err);
+      });
+  }
+
+  function sendPptxUpload(host, btn, key, file) {
+    var label = btn.querySelector('.pptx-upload-label');
+    var origLabel = label ? label.textContent : '';
+    if (label) label.textContent = 'Uploading…';
+    btn.disabled = true;
+
+    // Open the viewer so the user sees progress immediately.
+    if (!host.classList.contains('pptx-open')) {
+      var phaseBtn = host.querySelector('.pptx-phase-btn');
+      if (phaseBtn) togglePhasePptx(phaseBtn);
+    }
+    var loading = host.querySelector('.pptx-inline-loading');
+    if (loading) {
+      loading.innerHTML = '<div class="pptx-spinner"></div>' +
+        '<div>Uploading + rendering ' + escapeHtml(file.name) + '…</div>' +
+        '<div style="font-size:10px;color:#64748b;margin-top:4px">This usually takes 5–30 seconds.</div>';
+      loading.classList.remove('hidden');
+    }
+
+    fetch('/_upload-pptx?key=' + encodeURIComponent(key), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation' },
+      body: file,
+    })
+      .then(function(r) {
+        return r.json().then(function(body) {
+          if (!r.ok || !body.ok) throw new Error(body.error || ('HTTP ' + r.status));
+          return body;
+        });
+      })
+      .then(function(result) {
+        btn.disabled = false;
+        if (label) label.textContent = origLabel;
+        // Reset state and re-init so the new slides load
+        host.__pptxState = null;
+        var stage = host.querySelector('.pptx-inline-stage');
+        if (stage) stage.innerHTML = '';
+        initInlinePptx(host);
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        if (label) label.textContent = origLabel;
+        if (loading) {
+          loading.innerHTML = '<div style="color:#fca5a5;text-align:center;max-width:420px;line-height:1.6;">' +
+            '<div style="font-size:28px">⚠️</div>' +
+            '<div style="font-size:13px;font-weight:700;margin-bottom:6px">Upload failed</div>' +
+            '<div style="font-size:11px;color:#94a3b8;">' + escapeHtml(String(err.message || err)) + '</div></div>';
+        }
+        console.error('uploadPptx:', err);
+      });
+  }
+
+  function initInlinePptx(host) {
+    if (host.__pptxState && host.__pptxState.count > 0) return; // already loaded
+    var key = host.dataset.pptxKey;
+    var viewer = host.querySelector('.pptx-inline');
+    if (!key || !viewer) return;
+
+    host.__pptxState = { key: key, count: 0, index: 0, loaded: {}, viewer: viewer };
+    var stage = viewer.querySelector('.pptx-inline-stage');
+    var loading = viewer.querySelector('.pptx-inline-loading');
+    stage.innerHTML = '';
+    loading.classList.remove('hidden');
+
+    fetch('/storage/presentations/' + key + '/manifest.json', { cache: 'no-cache' })
+      .then(function(r) {
+        if (!r.ok) throw new Error('manifest ' + r.status);
+        return r.json();
+      })
+      .then(function(m) {
+        host.__pptxState.count = m.slides || 0;
+        if (!host.__pptxState.count) throw new Error('manifest has no slides');
+        loading.classList.add('hidden');
+        showInlinePptx(host, 0);
+      })
+      .catch(function(err) {
+        loading.innerHTML =
+          '<div style="color:#fca5a5; text-align:center; max-width:420px; line-height:1.6;">' +
+          '<div style="font-size:28px; margin-bottom:8px;">⚠️</div>' +
+          '<div style="font-size:13px; font-weight:700; margin-bottom:6px;">Slides not built yet</div>' +
+          '<div style="font-size:11px; color:#94a3b8;">' +
+          'Run <code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:3px;">./rebuild.sh</code> ' +
+          'to generate them.<br><span style="font-size:10px; opacity:0.7;">(' + err.message + ')</span>' +
+          '</div></div>';
+      });
+  }
+
+  function ensureInlineImage(host, i) {
+    var st = host.__pptxState;
+    if (st.loaded[i]) return st.loaded[i];
+    var img = document.createElement('img');
+    img.src = slidePath(st.key, i);
+    img.dataset.index = String(i);
+    img.alt = 'Slide ' + (i + 1);
+    img.style.display = 'none';
+    // If the file vanished (deleted manifestlessly), replace with inline error
+    // instead of leaving the slot blank.
+    img.onerror = function() {
+      var stage = host.querySelector('.pptx-inline-stage');
+      if (!stage) return;
+      // Only show the error if THIS slide is the one currently visible.
+      if (st.index === i) {
+        stage.querySelectorAll('img').forEach(function(el) { el.style.display = 'none'; });
+        var msg = stage.querySelector('.pptx-missing-msg');
+        if (!msg) {
+          msg = document.createElement('div');
+          msg.className = 'pptx-missing-msg';
+          msg.style.cssText = 'color:#fca5a5; text-align:center; padding:24px; line-height:1.6;';
+          stage.appendChild(msg);
+        }
+        msg.innerHTML = '<div style="font-size:28px">⚠️</div>' +
+          '<div style="font-size:13px; font-weight:700; margin-top:6px;">Slide ' + (i + 1) + ' is missing on disk</div>' +
+          '<div style="font-size:11px; color:#94a3b8; margin-top:4px;">Re-upload the .pptx or run <code>./backend/rebuild.sh</code></div>';
+      }
+    };
+    host.querySelector('.pptx-inline-stage').appendChild(img);
+    st.loaded[i] = img;
+    return img;
+  }
+
+  function showInlinePptx(host, i) {
+    var st = host.__pptxState;
+    var stage = host.querySelector('.pptx-inline-stage');
+    ensureInlineImage(host, i);
+    Array.from(stage.children).forEach(function(el) { el.style.display = 'none'; });
+    st.loaded[i].style.display = 'block';
+    st.index = i;
+    // Clear any "missing slide" message left over from a previous failure
+    var missing = stage.querySelector('.pptx-missing-msg');
+    if (missing) missing.remove();
+    [i - 1, i + 1].forEach(function(j) {
+      if (j >= 0 && j < st.count) ensureInlineImage(host, j);
+    });
+    updateInlineCounter(host);
+  }
+
+  function updateInlineCounter(host) {
+    var st = host.__pptxState;
+    if (!st || !st.count) return;
+    host.querySelector('.pptx-inline-counter').textContent = (st.index + 1) + ' / ' + st.count;
+    host.querySelector('.pptx-nav-prev').disabled = st.index === 0;
+    host.querySelector('.pptx-nav-next').disabled = st.index === st.count - 1;
+  }
+
+  function navInlinePptx(btn, delta) {
+    var host = findPptxHost(btn);
+    if (!host || !host.__pptxState || !host.__pptxState.count) return;
+    var st = host.__pptxState;
+    var next = Math.max(0, Math.min(st.count - 1, st.index + delta));
+    if (next === st.index) return;
+    showInlinePptx(host, next);
+  }
+
+  function toggleInlinePptxFs(btn) {
+    var viewer = btn.closest('.pptx-inline');
+    if (!viewer) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else if (viewer.requestFullscreen) {
+      viewer.requestFullscreen().catch(function(){});
+    }
+  }
+
+  // Arrow keys navigate the open .has-pptx host (the one that's pptx-open). F toggles fullscreen.
+  document.addEventListener('keydown', function(e) {
+    var host = document.querySelector('.has-pptx.pptx-open');
+    if (!host || !host.__pptxState || !host.__pptxState.count) return;
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+      e.preventDefault();
+      navInlinePptx(host.querySelector('.pptx-nav-next'), 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      navInlinePptx(host.querySelector('.pptx-nav-prev'), -1);
+    } else if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      toggleInlinePptxFs(host.querySelector('.pptx-fs-btn'));
+    }
+  });
+
+  // ── ROADMAP EDITOR ────────────────────────────────────────────────────
+  // Default state is view-only. Click "Edit" to enter edit mode → text becomes
+  // editable, X / + buttons + drag handles appear, SortableJS enables drag.
+  // Save POSTs the cleaned HTML to server.py's /_save endpoint.
+
+  var EDITABLE_SELECTORS = [
+    '.phase-num',
+    '.phase-title',
+    '.card-title',
+    '.card-detail li'
+  ];
+  var STORAGE_KEY = 'roadmap-edits-v1';
+  var EDIT_MODE = false;
+  var sortablePhases = null;
+  var sortableCards = [];
+
+  function stopProp(e) {
+    // Only block the card toggle when this element is actually editable (edit mode).
+    // In view mode, let the click bubble up so clicking anywhere on the card opens it.
+    if (e.currentTarget.getAttribute('contenteditable') === 'true') {
+      e.stopPropagation();
+    }
+  }
+  function pasteAsPlainText(e) {
+    e.preventDefault();
+    var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, text);
+  }
+  function editKeyGuard(e) {
+    var singleLine = ['phase-num', 'phase-title', 'card-title'];
+    if (e.key === 'Enter' && singleLine.some(function(c){ return e.currentTarget.classList.contains(c); })) {
+      e.preventDefault();
+      e.currentTarget.blur();
+    }
+  }
+  function onEdit() {
+    saveToStorage();
+    setEditorState('dirty');
+  }
+
+  // Walk the document and ensure every editable element has a stable data-edit-id.
+  // Existing IDs are preserved so localStorage entries keep matching.
+  function reassignEditIds() {
+    var used = new Set();
+    document.querySelectorAll('[data-edit-id]').forEach(function(el) { used.add(el.dataset.editId); });
+    var counter = used.size;
+    EDITABLE_SELECTORS.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        if (el.closest('.pptx-inline')) return;
+        if (!el.dataset.editId) {
+          var id;
+          do { counter++; id = 'e' + counter; } while (used.has(id));
+          el.dataset.editId = id;
+          used.add(id);
+          // Attach edit listeners once
+          el.spellcheck = false;
+          el.addEventListener('mousedown', stopProp);
+          el.addEventListener('click', stopProp);
+          el.addEventListener('input', onEdit);
+          el.addEventListener('paste', pasteAsPlainText);
+          el.addEventListener('keydown', editKeyGuard);
+        }
+      });
+    });
+  }
+
+  function applyContentEditable(on) {
+    document.querySelectorAll('[data-edit-id]').forEach(function(el) {
+      if (on) el.setAttribute('contenteditable', 'true');
+      else el.removeAttribute('contenteditable');
+    });
+  }
+
+  function saveToStorage() {
+    if (!EDIT_MODE) return;
+    var data = {};
+    document.querySelectorAll('[data-edit-id]').forEach(function(el) {
+      data[el.dataset.editId] = el.innerHTML;
+    });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+  }
+  function restoreFromStorage() {
+    var raw;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) { return false; }
+    if (!raw) return false;
+    var data;
+    try { data = JSON.parse(raw); } catch(e) { return false; }
+    var restored = 0;
+    Object.keys(data).forEach(function(id) {
+      var el = document.querySelector('[data-edit-id="' + id + '"]');
+      if (el && el.innerHTML !== data[id]) { el.innerHTML = data[id]; restored++; }
+    });
+    return restored > 0;
+  }
+  function clearStorage() { try { localStorage.removeItem(STORAGE_KEY); } catch(e) {} }
+
+  function buildCleanHtml() {
+    var clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('[contenteditable]').forEach(function(el) { el.removeAttribute('contenteditable'); });
+    clone.querySelectorAll('[spellcheck]').forEach(function(el) { el.removeAttribute('spellcheck'); });
+    clone.querySelectorAll('[data-edit-id]').forEach(function(el) { el.removeAttribute('data-edit-id'); });
+    // Strip edit-only UI: toolbar, X buttons, +Add buttons, drag handles
+    var toolbar = clone.querySelector('#editor-toolbar');
+    if (toolbar) toolbar.remove();
+    clone.querySelectorAll('.edit-remove-btn, .edit-add-card-btn, .edit-add-phase-btn, .card-drag-handle').forEach(function(el){ el.remove(); });
+    // Remove SortableJS-added attrs
+    clone.querySelectorAll('[draggable]').forEach(function(el){ el.removeAttribute('draggable'); });
+    // Remove leftover edit-mode class on body (clone is <html>, not document)
+    var cloneBody = clone.querySelector('body');
+    if (cloneBody) cloneBody.classList.remove('edit-mode');
+    return '<!DOCTYPE html>\n' + clone.outerHTML;
+  }
+
+  function setToolbarMessage(text, kind) {
+    var tb = document.getElementById('editor-toolbar');
+    if (!tb) return;
+    var status = tb.querySelector('.editor-status');
+    if (!status) return;
+    var orig = status.dataset.origHtml || (status.dataset.origHtml = status.innerHTML);
+    status.innerHTML = '<span style="color:' + (kind === 'err' ? '#fca5a5' : kind === 'ok' ? '#34d399' : '#94a3b8') + '">' + text + '</span>';
+    clearTimeout(setToolbarMessage._t);
+    setToolbarMessage._t = setTimeout(function() { status.innerHTML = orig; }, 3500);
+  }
+
+  function saveChanges() {
+    // Serialize the current timeline to markdown and write it back to content.md
+    var md;
+    try { md = serializeRoadmapToMd(); }
+    catch (err) { setToolbarMessage('Serialize failed: ' + err.message, 'err'); return; }
+    fetch('/_save-content', { method: 'POST', headers: { 'Content-Type': 'text/markdown;charset=utf-8' }, body: md })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json().catch(function(){ return {}; });
+      })
+      .then(function() {
+        clearStorage();
+        setEditorState('clean');
+        setToolbarMessage('✓ Saved to content.md', 'ok');
+        exitEditMode();
+      })
+      .catch(function(err) {
+        var msg = (err && err.message) || String(err);
+        if (msg.indexOf('404') !== -1 || msg.indexOf('501') !== -1) {
+          setToolbarMessage('Save endpoint missing — run python3 backend/server.py', 'err');
+        } else {
+          setToolbarMessage('Save failed: ' + msg, 'err');
+        }
+        console.error('saveChanges:', err);
+      });
+  }
+  function setEditorState(state) {
+    var tb = document.getElementById('editor-toolbar');
+    if (tb) tb.dataset.state = state;
+  }
+
+  // Inject the toolbar (Edit button visible in view mode; Save+Done in edit mode)
+  function mountEditorToolbar() {
+    var tb = document.createElement('div');
+    tb.id = 'editor-toolbar';
+    tb.dataset.state = 'clean';
+    tb.dataset.mode = 'view';
+    tb.innerHTML =
+      '<span class="editor-status toolbar-edit-only">' +
+      '  <span class="editor-status-clean">✎ Edit mode — click any title/bullet to edit</span>' +
+      '  <span class="editor-status-dirty">● Unsaved changes</span>' +
+      '</span>' +
+      '<button type="button" class="editor-btn editor-primary toolbar-view-only" onclick="enterEditMode()" title="Enter edit mode">Edit</button>' +
+      '<button type="button" class="editor-btn editor-primary toolbar-edit-only" onclick="saveChanges()" title="Save changes and exit edit mode">Save</button>';
+    document.body.appendChild(tb);
+  }
+
+  // ── Edit / View mode transitions ──
+  function enterEditMode() {
+    EDIT_MODE = true;
+    document.body.classList.add('edit-mode');
+    applyContentEditable(true);
+    var tb = document.getElementById('editor-toolbar');
+    if (tb) tb.dataset.mode = 'edit';
+    // restore any pending local edits and mark dirty if present
+    if (restoreFromStorage()) setEditorState('dirty');
+    initSortable();
+  }
+  function exitEditMode() {
+    EDIT_MODE = false;
+    document.body.classList.remove('edit-mode');
+    applyContentEditable(false);
+    var tb = document.getElementById('editor-toolbar');
+    if (tb) tb.dataset.mode = 'view';
+    destroySortable();
+  }
+
+  // ── Drag-and-drop ──
+  function initSortable() {
+    if (typeof Sortable === 'undefined') return;
+    var timeline = document.querySelector('.timeline');
+    if (timeline) {
+      sortablePhases = Sortable.create(timeline, {
+        handle: '.phase-connector',
+        draggable: '.phase',
+        animation: 200,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        onEnd: onSortEnd,
+      });
+    }
+    document.querySelectorAll('.cards').forEach(function(c) { addSortableForCards(c); });
+  }
+  function addSortableForCards(container) {
+    if (typeof Sortable === 'undefined') return;
+    var s = Sortable.create(container, {
+      handle: '.card-drag-handle',
+      draggable: '.card',
+      animation: 200,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      onEnd: onSortEnd,
+    });
+    sortableCards.push(s);
+  }
+  function destroySortable() {
+    if (sortablePhases) { try { sortablePhases.destroy(); } catch(e){} sortablePhases = null; }
+    sortableCards.forEach(function(s) { try { s.destroy(); } catch(e){} });
+    sortableCards = [];
+  }
+  function onSortEnd() {
+    renumberPhases();
+    recolorPhases();
+    setEditorState('dirty');
+    saveToStorage();
+  }
+
+  function renumberPhases() {
+    document.querySelectorAll('.timeline .phase').forEach(function(phase, idx) {
+      var num = phase.querySelector('.phase-num');
+      if (num) num.textContent = 'Phase ' + (idx + 1);
+    });
+  }
+
+  // Cycle phases through the brand color pairings (p1 … p7) based on position.
+  // Wraps around: phase 8 → p1, phase 9 → p2, etc.
+  var ALL_COLOR_CLASSES = ['p1','p2','p3','p4','p5','p6','p7','p-new'];
+  function recolorPhases() {
+    document.querySelectorAll('.timeline .phase').forEach(function(phase, idx) {
+      var color = PHASE_COLORS[idx % PHASE_COLORS.length];
+      ['.phase-dot', '.phase-line', '.phase-body', '.phase-num'].forEach(function(sel) {
+        var el = phase.querySelector(sel);
+        if (!el) return;
+        ALL_COLOR_CLASSES.forEach(function(c) { el.classList.remove(c); });
+        el.classList.add(color);
+      });
+    });
+  }
+
+  // ── Edit affordance injection ──
+  function injectEditControlsAll() {
+    document.querySelectorAll('.phase').forEach(injectPhaseControls);
+    document.querySelectorAll('.card').forEach(injectCardControls);
+    // Add "+ Add card" button at the bottom of each phase-body with a .cards container.
+    // (Skip phases like the Token deck that have a custom internal layout.)
+    document.querySelectorAll('.phase-body').forEach(function(body) {
+      if (!body.querySelector(':scope > .cards')) return;
+      if (body.querySelector(':scope > .edit-add-card-btn')) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'edit-add-card-btn';
+      btn.textContent = '+ Add card';
+      btn.onclick = function() { addCard(body); };
+      var pptx = body.querySelector(':scope > .pptx-inline');
+      if (pptx) body.insertBefore(btn, pptx); else body.appendChild(btn);
+    });
+    // Add "+ Add phase" button at end of timeline
+    var timeline = document.querySelector('.timeline');
+    if (timeline && !timeline.querySelector(':scope > .edit-add-phase-btn')) {
+      var pBtn = document.createElement('button');
+      pBtn.type = 'button';
+      pBtn.className = 'edit-add-phase-btn';
+      pBtn.textContent = '+ Add phase';
+      pBtn.onclick = function() { addPhase(); };
+      timeline.appendChild(pBtn);
+    }
+  }
+  function injectPhaseControls(phase) {
+    var header = phase.querySelector('.phase-header');
+    if (header && !header.querySelector(':scope > .edit-remove-phase')) {
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'edit-remove-btn edit-remove-phase';
+      x.title = 'Remove this phase';
+      x.textContent = '×';
+      x.onclick = function(e) { e.stopPropagation(); removePhase(phase); };
+      header.appendChild(x);
+    }
+  }
+  function injectCardControls(card) {
+    if (!card.querySelector(':scope > .card-drag-handle')) {
+      var h = document.createElement('span');
+      h.className = 'card-drag-handle';
+      h.title = 'Drag to reorder';
+      h.textContent = '⋮⋮';
+      card.appendChild(h);
+    }
+    if (!card.querySelector(':scope > .edit-remove-card')) {
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'edit-remove-btn edit-remove-card';
+      x.title = 'Remove this card';
+      x.textContent = '×';
+      x.onclick = function(e) { e.stopPropagation(); removeCard(card); };
+      card.appendChild(x);
+    }
+  }
+
+  // ── Add / Remove ──
+  function slugify(s) {
+    return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'new-phase';
+  }
+
+  function addPhase() {
+    var timeline = document.querySelector('.timeline');
+    if (!timeline) return;
+    var nextNum = timeline.querySelectorAll('.phase').length + 1;
+    var phase = document.createElement('div');
+    phase.className = 'phase';
+    phase.innerHTML =
+      '<div class="phase-connector">' +
+      '  <div class="phase-dot p-new">📌</div>' +
+      '  <div class="phase-line p-new last"></div>' +
+      '</div>' +
+      '<div class="phase-body p-new has-pptx" data-pptx-key="new-phase-' + nextNum + '">' +
+      '  <div class="phase-header">' +
+      '    <span class="phase-num p-new">Phase ' + nextNum + '</span>' +
+      '    <span class="phase-title">New Phase</span>' +
+      '    <button class="pptx-phase-btn" onclick="togglePhasePptx(this)" aria-expanded="false">' +
+      '      <span class="pptx-phase-icon">▶</span>' +
+      '      <span class="pptx-phase-label">Presentation</span>' +
+      '    </button>' +
+      '  </div>' +
+      '  <div class="cards"></div>' +
+      '  <div class="pptx-inline">' +
+      '    <div class="pptx-inline-stage"></div>' +
+      '    <button class="pptx-nav-btn pptx-nav-prev" onclick="navInlinePptx(this, -1)" aria-label="Previous">‹</button>' +
+      '    <button class="pptx-nav-btn pptx-nav-next" onclick="navInlinePptx(this, 1)" aria-label="Next">›</button>' +
+      '    <button class="pptx-fs-btn" onclick="toggleInlinePptxFs(this)" title="Fullscreen (F)"><span class="pptx-fs-enter">⛶</span><span class="pptx-fs-exit">✕</span></button>' +
+      '    <div class="pptx-inline-counter">0 / 0</div>' +
+      '    <div class="pptx-inline-loading"><div class="pptx-spinner"></div><div>Loading slides…</div></div>' +
+      '  </div>' +
+      '</div>';
+    // Append before the + Add phase button
+    var addBtn = timeline.querySelector(':scope > .edit-add-phase-btn');
+    if (addBtn) timeline.insertBefore(phase, addBtn); else timeline.appendChild(phase);
+    // Wire edit controls + sortable + edit IDs on this new phase.
+    // IMPORTANT: ensurePhaseHasPptxButton MUST run before injectPhaseControls
+    // so the × Remove-phase button ends up as the last button in the header,
+    // matching the order of phases rendered on initial load.
+    var body = phase.querySelector('.phase-body');
+    ensurePhaseHasPptxButton(body);
+    injectPhaseControls(phase);
+    var addCardBtn = document.createElement('button');
+    addCardBtn.type = 'button';
+    addCardBtn.className = 'edit-add-card-btn';
+    addCardBtn.textContent = '+ Add card';
+    addCardBtn.onclick = function() { addCard(body); };
+    body.insertBefore(addCardBtn, body.querySelector('.pptx-inline'));
+    reassignEditIds();
+    if (EDIT_MODE) {
+      applyContentEditable(true);
+      addSortableForCards(phase.querySelector('.cards'));
+    }
+    renumberPhases();
+    recolorPhases();
+    setEditorState('dirty');
+    saveToStorage();
+    // Pre-seed one empty card so the user sees something to edit
+    addCard(body, { silent: true });
+  }
+
+  function removePhase(phase) {
+    phase.remove();
+    renumberPhases();
+    recolorPhases();
+    setEditorState('dirty');
+    saveToStorage();
+  }
+
+  function addCard(phaseBody, opts) {
+    opts = opts || {};
+    var cards = phaseBody.querySelector('.cards');
+    if (!cards) return;
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.setAttribute('onclick', 'toggle(this)');
+    card.innerHTML =
+      '<span class="card-chevron">▼</span>' +
+      '<div class="card-header"><span class="card-icon">📄</span><div class="card-title">New Card</div></div>' +
+      '<div class="card-detail">' +
+      '  <ul><li>Add a detail here</li></ul>' +
+      '</div>';
+    cards.appendChild(card);
+    injectCardControls(card);
+    reassignEditIds();
+    if (EDIT_MODE) applyContentEditable(true);
+    if (!opts.silent) {
+      setEditorState('dirty');
+      saveToStorage();
+    }
+  }
+  function removeCard(card) {
+    card.remove();
+    setEditorState('dirty');
+    saveToStorage();
+  }
+
+  // Give every phase a Presentation button + inline viewer if it doesn't have one.
+  function ensurePhaseHasPptxButton(phaseBody) {
+    if (!phaseBody.dataset.pptxKey) {
+      var titleEl = phaseBody.querySelector('.phase-title');
+      phaseBody.dataset.pptxKey = slugify(titleEl ? titleEl.textContent : 'phase');
+    }
+    phaseBody.classList.add('has-pptx');
+    var header = phaseBody.querySelector('.phase-header');
+    if (header && !header.querySelector(':scope > .pptx-phase-btn')) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pptx-phase-btn';
+      btn.setAttribute('onclick', 'togglePhasePptx(this)');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.innerHTML = '<span class="pptx-phase-icon">▶</span><span class="pptx-phase-label">Presentation</span>';
+      header.appendChild(btn);
+    }
+    // Upload + Remove buttons — visible in edit mode only (CSS-gated by body.edit-mode)
+    if (header && !header.querySelector(':scope > .pptx-upload-btn')) {
+      var up = document.createElement('button');
+      up.type = 'button';
+      up.className = 'pptx-upload-btn';
+      up.setAttribute('onclick', 'uploadPptx(this)');
+      up.setAttribute('title', 'Upload a .pptx for this phase (replaces the current one)');
+      up.innerHTML = '<span class="pptx-upload-icon">📎</span><span class="pptx-upload-label">Upload</span>';
+      header.appendChild(up);
+    }
+    if (header && !header.querySelector(':scope > .pptx-remove-btn')) {
+      var rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'pptx-remove-btn';
+      rm.setAttribute('onclick', 'removePptx(this)');
+      rm.setAttribute('title', 'Remove the presentation for this phase');
+      rm.innerHTML = '<span class="pptx-remove-icon">🗑️</span><span class="pptx-remove-label">Remove deck</span>';
+      header.appendChild(rm);
+    }
+    if (!phaseBody.querySelector(':scope > .pptx-inline')) {
+      var viewer = document.createElement('div');
+      viewer.className = 'pptx-inline';
+      viewer.innerHTML =
+        '<div class="pptx-inline-stage"></div>' +
+        '<button class="pptx-nav-btn pptx-nav-prev" onclick="navInlinePptx(this, -1)" aria-label="Previous">‹</button>' +
+        '<button class="pptx-nav-btn pptx-nav-next" onclick="navInlinePptx(this, 1)" aria-label="Next">›</button>' +
+        '<button class="pptx-fs-btn" onclick="toggleInlinePptxFs(this)" title="Fullscreen (F)">' +
+          '<span class="pptx-fs-enter">⛶</span><span class="pptx-fs-exit">✕</span></button>' +
+        '<div class="pptx-inline-counter">0 / 0</div>' +
+        '<div class="pptx-inline-loading"><div class="pptx-spinner"></div><div>Loading slides…</div></div>';
+      phaseBody.appendChild(viewer);
+    }
+  }
+
+  // ── MARKDOWN ↔ DOM ─────────────────────────────────────────────────────
+  // The page renders from storage/content.md. Editing the markdown and
+  // reloading shows the changes; in-browser edits + Save serialize the DOM
+  // back to markdown and POST it to /_save-content.
+
+  // Cycle these classes across phases so colors travel with their position.
+  var PHASE_COLORS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'];
+  // First "non-whitespace, non-letter-or-digit" run at the start of a heading is the icon.
+  // Captures emoji, including multi-codepoint ones like 🛡️ or 🤖.
+  var ICON_RX = /^([^\s\w][^\s]*?)\s+/u;
+
+  function splitIcon(text) {
+    var m = ICON_RX.exec(text);
+    if (m) return { icon: m[1], rest: text.slice(m[0].length).trim() };
+    return { icon: '', rest: text.trim() };
+  }
+
+  // Parse our flavour of markdown:
+  //   # Page title (with optional leading emoji)
+  //   ## <emoji> <Phase N>: <Phase title>
+  //   ### <emoji> <Card title>
+  //   - bullet
+  function parseContentMd(md) {
+    var lines = md.split(/\r?\n/);
+    var data = { title: '', phases: [] };
+    var phase = null, card = null;
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+      if (ln.startsWith('# ')) {
+        data.title = ln.slice(2).trim();
+      } else if (ln.startsWith('## ')) {
+        var heading = ln.slice(3).trim();
+        var split = splitIcon(heading);
+        // heading.rest may be "Phase N: Title"
+        var m = /^(Phase\s+\S+):\s*(.*)$/.exec(split.rest);
+        if (m) {
+          phase = { icon: split.icon, num: m[1], title: m[2], cards: [] };
+        } else {
+          phase = { icon: split.icon, num: '', title: split.rest, cards: [] };
+        }
+        data.phases.push(phase);
+        card = null;
+      } else if (ln.startsWith('### ') && phase) {
+        var hh = ln.slice(4).trim();
+        var s = splitIcon(hh);
+        card = { icon: s.icon, title: s.rest, bullets: [] };
+        phase.cards.push(card);
+      } else if (/^\s*-\s+/.test(ln) && card) {
+        card.bullets.push(ln.replace(/^\s*-\s+/, '').trim());
+      }
+    }
+    return data;
+  }
+
+  function renderRoadmap(data) {
+    var titleEl = document.querySelector('.title');
+    if (titleEl && data.title) titleEl.textContent = data.title;
+    var timeline = document.querySelector('.timeline');
+    timeline.innerHTML = '';
+    data.phases.forEach(function(ph, idx) {
+      timeline.appendChild(renderPhase(ph, idx));
+    });
+  }
+
+  function renderPhase(ph, idx) {
+    var color = PHASE_COLORS[idx % PHASE_COLORS.length];
+    var num = ph.num || ('Phase ' + (idx + 1));
+    var icon = ph.icon || '📌';
+    var phase = document.createElement('div');
+    phase.className = 'phase';
+    var html =
+      '<div class="phase-connector">' +
+      '  <div class="phase-dot ' + color + '">' + icon + '</div>' +
+      '  <div class="phase-line ' + color + (idx === undefined ? ' last' : '') + '"></div>' +
+      '</div>' +
+      '<div class="phase-body ' + color + '">' +
+      '  <div class="phase-header">' +
+      '    <span class="phase-num ' + color + '">' + escapeHtml(num) + '</span>' +
+      '    <span class="phase-title">' + escapeHtml(ph.title || '') + '</span>' +
+      '  </div>' +
+      '  <div class="cards">' +
+      ph.cards.map(renderCard).join('') +
+      '  </div>' +
+      '</div>';
+    phase.innerHTML = html;
+    return phase;
+  }
+
+  function renderCard(card) {
+    var icon = card.icon || '📄';
+    return (
+      '<div class="card" onclick="toggle(this)">' +
+      '  <span class="card-chevron">▼</span>' +
+      '  <div class="card-header"><span class="card-icon">' + escapeHtml(icon) + '</span>' +
+        '<div class="card-title">' + escapeHtml(card.title || '') + '</div></div>' +
+      '  <div class="card-detail"><ul>' +
+        card.bullets.map(function(b){ return '<li>' + escapeHtml(b) + '</li>'; }).join('') +
+      '  </ul></div>' +
+      '</div>'
+    );
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // Serialize the current timeline back to markdown.
+  function serializeRoadmapToMd() {
+    var titleEl = document.querySelector('.title');
+    var lines = [];
+    if (titleEl) lines.push('# ' + titleEl.textContent.trim(), '');
+    document.querySelectorAll('.timeline .phase').forEach(function(phase, idx) {
+      var body = phase.querySelector('.phase-body');
+      var dotEl = phase.querySelector('.phase-dot');
+      var numEl = phase.querySelector('.phase-num');
+      var titleSpan = phase.querySelector('.phase-title');
+      var icon = dotEl ? dotEl.textContent.trim() : '';
+      var num = numEl ? numEl.textContent.trim() : ('Phase ' + (idx + 1));
+      var t = titleSpan ? titleSpan.textContent.trim() : '';
+      var head = (icon ? icon + ' ' : '') + num + ': ' + t;
+      lines.push('## ' + head, '');
+      phase.querySelectorAll('.card').forEach(function(card) {
+        var ci = card.querySelector('.card-icon');
+        var ct = card.querySelector('.card-title');
+        var icon2 = ci ? ci.textContent.trim() : '';
+        var t2 = ct ? ct.textContent.trim() : '';
+        lines.push('### ' + (icon2 ? icon2 + ' ' : '') + t2);
+        card.querySelectorAll('.card-detail li').forEach(function(li) {
+          lines.push('- ' + li.textContent.trim().replace(/\s+/g, ' '));
+        });
+        lines.push('');
+      });
+    });
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
+  }
+
+  // ── Bootstrap ──
+  function initEditor() {
+    reassignEditIds();   // assign IDs to editable elements
+    document.querySelectorAll('.timeline .phase .phase-body').forEach(ensurePhaseHasPptxButton);
+    injectEditControlsAll();
+    mountEditorToolbar();
+  }
+
+  function bootstrap() {
+    fetch('/storage/content.md', { cache: 'no-store' })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(function(md) {
+        var data = parseContentMd(md);
+        renderRoadmap(data);
+        initEditor();
+      })
+      .catch(function(err) {
+        var t = document.querySelector('.timeline');
+        if (t) t.innerHTML = '<div style="padding:40px; color:#dc2626; text-align:center;">' +
+          '<div style="font-size:32px;">⚠️</div>' +
+          '<div>Failed to load <code>storage/content.md</code>: ' + escapeHtml(String(err.message || err)) + '</div>' +
+          '<div style="font-size:12px; color:#94a3b8; margin-top:8px;">Make sure you started the server with <code>python3 backend/server.py</code>.</div></div>';
+        // Still mount editor toolbar so the user has Edit available
+        try { mountEditorToolbar(); } catch(e){}
+      });
+  }
+  bootstrap();
+</script>
+
+</body></html>

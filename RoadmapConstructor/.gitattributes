@@ -1,0 +1,19 @@
+# Default: let Git auto-detect text vs binary and normalize line endings on commit
+* text=auto eol=lf
+
+# Force LF line endings on shell scripts so they run on Windows (Git Bash)
+# without "bash: \r: command not found" errors.
+*.sh   text eol=lf
+*.py   text eol=lf
+
+# Markdown, HTML, JSON, CSS, JS: text, normalized to LF
+*.md   text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+
+# Binary blobs — never convert
+*.png  binary
+*.pptx binary
+*.pdf  binary

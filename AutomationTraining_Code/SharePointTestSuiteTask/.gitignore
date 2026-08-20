@@ -1,0 +1,3 @@
+# Local secrets override — never commit real credentials.
+# Put real ClientId/Secret/AdminPassword here; it overrides settings.json at runtime.
+settings.local.json

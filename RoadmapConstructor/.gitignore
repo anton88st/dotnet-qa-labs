@@ -1,0 +1,31 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python venv
+.venv/
+__pycache__/
+*.pyc
+
+# Claude Code config — keep slash commands tracked, ignore the rest
+.claude/*
+!.claude/commands/
+!.claude/commands/**
+
+# Source .pptx files — too large for GitHub's 100MB limit.
+# Editor only; teammates view the rendered PNGs which ARE committed.
+storage/presentations/**/*.pptx
+
+# LibreOffice intermediate output
+*.pdf
+
+# Atomic save intermediate from server.py
+*.html.tmp

@@ -1,0 +1,3 @@
+# Local settings override — never commit machine-specific or secret values.
+# Put local overrides here; it overrides settings.json at runtime.
+settings.local.json
